@@ -1,0 +1,32 @@
+interface AbstractNetwork : Thread {
+    MultiSet<Msg> container;
+   
+    send(m: Msg) {
+        container.add(m);
+    }
+   
+   Set<Msg> pick() {
+        // choose a message from its container
+    }
+    
+    Msg transfer() {
+        Set<Msg> ready2Deliver = pick(container);
+        // the policy to select a message m from the ready2Deliver
+    }
+    
+    dispatch()
+    {
+      // taking a message from its container
+        m= transfer () ;
+        Actor actor = getActor(m.getReceiver());
+        actor.receive(m);
+        container.remove(m);    
+    }
+
+     run() {
+        while (!container.isEmpty()) {
+            dispatch();
+        }
+    }   
+    
+}

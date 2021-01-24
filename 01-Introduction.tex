@@ -1,0 +1,64 @@
+\section{Introduction}
+
+Sematic Specification Framework for actor-based languages
+
+Framework:
+constant: Reuse the framework ...
+inherit the rules of Timed Rebeca ... ABS 
+
+Variable: policies - arguments ...
+(Future and things that we did not consider)
+
+When designing a new language: points of decision 
+
+proving different theorems
+
+The computational model of actors \cite{Hewitt77,Agha90} has been introduced to model concurrent and distributed systems. Such modeling has become very popular in practice. Scala programming language supports actor-models. Actors, the primitives of computation, are independent, well encapsulated, and of course, run concurrently. Each actor has its own variables, and its encapsulation prohibits other actors from accessing its variables directly. Each actor communicates with others only through message passing and owns a mailbox with a unique address to store the received messages. An actor's behavior is defined in terms of a set of message handlers that specify how the actor reacts upon processing each received message. In this model, message delivery is guaranteed but is not in-order; if an actor sends two messages to a destination, they will be received in any order. This assumption implicitly abstracts away from the effects of the network, i.e., delays over different routing paths, message conflicts, etc., and consequently makes it a suitable modeling framework for concurrent and distributed applications. 
+
+
+Many different formal modeling languages, like ABS \cite{ABS}, Timed Rebeca \cite{SirjaniK16}, Lingua Franca, have been proposed based on this computational model (see also \cite{survay}). Each language considers a set of policies on the delivery/processing of messages or their maintenance in the buffers. These policies may depend on the domain of systems and network settings. Different network settings like Ethernet, wireless, CAN bus, etc. have different effects on how messages are dispatched among entities in a distributed system. Different policies on the receipt of messages, e.g., overwriting old messages, dropping when the buffer is overflow, etc., or taking messages from the buffer regarding the priority or timestamps of messages have been considered in these languages. These policies are not explicitly explained in the definition of languages and their effects can be only followed up in the semantic rules of languages. However, one can not easily understands from the semantic rules the set of policies considered in the language. %leading to those assumptions of semantic rules. 
+
+
+%For the verification of distributed systems with the model checking technique, different aspects of systems like configuration of actors, timing or probabilistic aspects, and coordination are considered to define the behavior of the systems. The rules focusing on these aspects are interweaved by those assumptions on the networks and policies of message handlers. 
+To have a precise comprehension of a language policies, we aim to provide a semantic specification framework for actor-based languages by which such policies are %each separate concern is 
+explicitly identified. Our framework provides a set of template rules that their assumptions may need to be adjusted with regard to the policies and network settings. We explicitly identify those assumptions that show a policy. Each policy explicitly reveals a decision point in realization of the actor model leading to variation of languages. We have defined the rules based on the interaction between two actors and network to realize a point-to-point communication between actors. To capture the policies at the buffer level, we also consider the interaction between actors/network and their buffers. We consider three phases for a point-to-point message communication as illustrated in Figure \ref{Fig::schema}: 
+\begin{itemize}
+\item\textit{Sending}: Actors push their messages into the buffer of the abstract network entity. %The properties of the network settings defines how the message is added to the local state of the network. %At this phase the reliability is considered. 
+
+\item\textit{Transferring}: The abstract network entity delivers messages from its buffer to the receiver. %In this phase, the affect of network setting is considered as reliable/unreliable delivery, the delay of messages, variations at message delivery such as  in-order, out-of-order, or causal-order delivery, scheduling of messages arrived at the same time, etc.
+
+%\item\textit{Receiving}: The abstract network entity pushes the messages from the network buffer into the buffer of receivers. %The policies of the receiver on handling buffer overflow, overwriting old messages or dropping redundant messages are considered at this phases. 
+
+\item\textit{Taking}: The actor chooses a message from the buffer to process it. %Policies at this phase realizes the buffer management concerns from the point-view of the application. It may consider the time-stamp or the priority of messages to defined which message should be processed at first.  
+	
+\end{itemize}
+
+\begin{figure}[htbp]
+	\centering
+	\input{./Fig/scheme.tex}
+	\caption{Three phases of point-to-point communication.
+	%\MS{I think this picture is very nice.}
+	\label{Fig::schema}}
+\end{figure}
+
+Regarding these three phases, we consider a set of interface functions for actors, network and buffer entities through which they can interact. The behavior of each interface function may include policies for realizing each phase. % can be abstracted away by a set of interface functions on buffers specifying how messages are selected either for transferring or processing.
+%: two belong to the abstract network entity, namely $\send$ and $\transfer$, two belong to (the buffer of) the actors, namely $\receive$ and $\take$. 
+%Viewing actors, their buffers and the abstract network as an entity, 
+The relation among entities and their functions are shown in Figure \ref{Fig::functions}; actors push their messages into the abstract network by calling (asynchronously) its $\receive$ interface function. This function maintains the received messages in the network buffer based on the network behavior by calling the function $\it put$. The abstract network entity calls its interface function $\transfer$ iteratively to dispatch the received messages to their recipients. As a consequence, it calls the function $\select$ of the buffer. This functions realizes the policy for dispatching the messages. When a message is selected for delivery, it is delivered to its destination actor by calling the $\receive$ function of actor. This functions calls the $\put$ function of buffer that its behavior depends on the policy for maintaining the received messages. 
+%Buffers are active entities. To receive messages, each buffer by calling the function $\it transfer$ of the network, gets the messages that are ready to be delivered to the buffer. They non-deterministically select one message among those messages to receive. 
+Actors by calling the function $\it take$ process the messages of their buffer. This function selects messages based on the select policy considered in the interface function $\select$ of buffers. % gets the messages that are ready to be processed and may non-deterministically choose one message among those messages to handle.
+
+\begin{figure}[htbp]
+	\centering
+	\input{./Fig/function2.tex}
+	\caption{The collaboration among the entities. The interface function $\send$ initiates the sending phase, $\transfer$ initiates the transferring phase, and $\take$ initiates the taking phase. %\FG{either the call from the send to transfer should be asynchronous or from the transfer to receive}
+	%\MS{I am not sure, maybe Transfer is a loop back in the Network, causing the receive? 
+	%I would draw it like this but it is not following any standards I guess: send causes transfer, transfer causes receive, receive causes take. Send goes from Actor to Network (like in the figure), Transfer is a loop back in the Network starting from the end of Send arrow, Receive starts from the end of Transfer arrow and comes back to the Buffer, Takes starts from somewhere from the buffer block after the end of the Receive arrow and goes to the Actor.
+	%
+	%This is my explanation:
+	%An actor \textit{sends} a message, it is put in the Network Soup, the network \textit{transfers} it to the receiver. Here, receiving has some process: the Network  informs the receiver that the message is ``ready to be delivered", the receiver actor decides how to \textit{receive} it and put it in its buffer (like overwrite or overflow or keep the newest time-tag ...).
+	%At some point the actor \textit{takes} it from the buffer based on a policy like  pattern-matching or an scheduling policy.}
+	\label{Fig::functions}}
+\end{figure}
+
+

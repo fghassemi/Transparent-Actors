@@ -1,0 +1,40 @@
+Reactiveclass Monitor (5)
+{
+    knownrebecs {
+        Alarm alarm;
+    }
+    
+    statevars {
+     int max;
+    }
+    
+    Monitor(int x)
+    {
+        max = x;
+    }
+
+    msgsvr check(int temp) {
+        //delay(2);
+        if (temp > max) {
+           alarm.notify() //after 1
+           ;
+        }
+    }
+}
+
+Reactiveclass Alarm(5)
+{
+    knownrebecs {  }
+    statevars {  }
+
+    msgsvr alarm() 
+    {
+        //play the alarm
+    }
+}
+main
+{
+   Monitor monitor (alarm):(25);
+   Alarm alarm():();
+}
+

@@ -1,0 +1,99 @@
+\subsection{Timed Rebeca}
+Timed Rebeca extends core Rebeca by adding time-passing statements:\begin{itemize}
+    \item send statement $x!\mathfrak{m} ~{\it after} ~\expr$ that sends a message with the name $\mathfrak{m}\in\MName$ to the actor with the identifier $x$ after an specified delay that its value is defined by $\expr$. This statement is used to model the delay of network.
+    \item delay ${\it delay}({\it expr})$ imposes an specified delay that its value is defined by $\expr$. This statement is used to model computation times. 
+\end{itemize}
+
+\begin{example}
+Uncommenting the statements in Figure \ref{fig:Controller} results a model specified in Timed Rebeca. In this model, upon receiving a $\it check$ message, the monitor examines the temperature after a delay of $2$ (line 17). However, if a  $\it notify$ message is sent by the monitor to the alarm, the message is delivered to the alarm after the network delay of $1$.
+\end{example}
+
+
+\subsubsection{Structure of Messages and Buffers}
+The messages in this setting have four parts: sender identifier, message name, receiver identifier, and arrival time. So the set of messages is defined as $\Msg = \ID\times\MName\times \ID\times \Nat$. We use dot notation $m.\rcv$ and $m.\ar$ to access the receiver identifier and the message arrival part. 
+
+
+In this setting the structure of actor and network buffers are identical and it is defined as an unbounded bag of messages. %We define bag by the two constructors $\empt: \buffer$, denoting an empty bag, and $\diamond: \Msg \times \buffer\rightarrow \buffer$, adds a message to the buffer. 
+We define the following functions on $\buffer$:\begin{itemize} 
+\item $\insert:\buffer \times \Msg\rightarrow \buffer$: given a buffer and message, this function inserts the message into the buffer;
+%\item $\head:\buffer \rightarrow \Msg$: specifies the head element of the given queue;
+\item $\remove:\buffer \times \Msg \rightarrow \buffer $: if the given message is included in the bag, this function removes the message from the bag. Otherwise, the bag is not changed;
+\item $\include:\Msg\times \buffer \rightarrow \bool$: its value is true if the given bag contains the given message. Otherwise, its value is false.
+\item ${\it isEmpty}:\buffer\rightarrow \bool$: returns true if the given bag contains at least a message.
+\end{itemize}
+
+%In this setting the structure of actor buffers and network buffer are identical and are defined as an unbounded bag of messages $\buffer=\bag(\Msg)$. Assume the following functions on $\bag(D)$:
+%\begin{itemize} 
+%\item $\oplus:\bag(D)\times D\rightarrow \bag(D)$: specifies a bag that the given item has been inserted into the given bag;
+%\item $\ominus:\bag(D)\times D\rightarrow \bag(D)$: specifies a bag that the given item has been removed from the given bag;
+%\item $\include:D\times \bag(\Msg)\rightarrow \bool$: its value is true if the given bag includes the given item. Otherwise, its value is false.
+%\end{itemize}
+
+\subsubsection{Semantic Rules}
+The semantic rules derived from the generic framework are given in Table \ref{Tab::TimedRules}. As this setting is timed, we should define the rule \textsc{EnvSync} for the actor and network level, and \textsc{EnvProgress} for the system level. %\fixme{when time can pass}
+
+
+
+\begin{table}[]
+\centering
+\caption{The semantic rules of the Timed Rebeca.}
+\label{Tab::TimedRules}
+\begin{tabular}{|c|lcc|}
+\hline
+\multirow{2}{*}{\begin{sideways}Buffer\end{sideways}} & \multicolumn{3}{c|}{$\inferrule*[left = (put)]{}{b\boverto{m?}\insert(b,m) }$}\\ [1mm]
+&   \multicolumn{3}{c|}{$\inferrule*[left = (Select)]{\include(m,b)\\\forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)}{b\boverto{m!}\remove(b,m) }$}\\[1mm] 
+\hline
+%------------Actor
+\multirow{5}{*}{\begin{sideways}Actor\end{sideways}} & & $\inferrule*[left = ( Receive)]{q\boverto{m?}q'}{(e,q,\sigma)\aoverto{m?}(e,q',\sigma)}$ & 
+$\inferrule*[left = (Internal)]{e,\sigma\stoverto{\tau}e',\sigma'}
+{(e,q,\sigma)\aoverto{\tau}(e',q,\sigma')}$ \\[1mm]
+& \multicolumn{3}{c|}{$\inferrule*[left = (Take)]{q\boverto{m!}q'}{(e,q,\epsilon)\aoverto{m}(e,q',\msgHandlr(m.\name))}$} \\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (EnvSync 1)]{e(\now)<e(\rt)\\e(\now)<t\le e(\rt)}{(e,b,\sigma)\aoverto{t}(e,b,\sigma)}$}\\[1mm] 
+&\multicolumn{3}{c|}{$\inferrule*[left = (EnvSync 2)]{
+%\include(m,b) \\ \forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)\\e(\now)<t< m.\ar
+{\it isEmpty}(b)
+}{(e,b,\epsilon)\aoverto{t}(e,b,\epsilon)}$}\\[1mm]
+\cline{2-4}
+%---------------Statement
+& \multirow{3}{*}{\begin{sideways}Statement\end{sideways}} &
+\multicolumn{1}{|c}{$\inferrule*[left = (Cond 1)]{\eval(\expr,e)\\e,\sigma_1\stoverto{\tau}e',\top}{e,{\it if}~ (\expr) ~\sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$} & $\inferrule*[left = (Seq)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$\\[1mm]
+& &  \multicolumn{1}{|c}{$\inferrule*[left = (Cond 2)]{\neg\eval(\expr,e)\\e,\sigma_2\stoverto{\tau}e',\top}{e,{\it if}~ (\expr)~ \sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$} & $\inferrule*[left = (Send)]{}{e,y!\mathfrak{m} \stoverto{(e({\it self}),\mathfrak{m},y)!} e,\top}$\\[1mm]
+& & \multicolumn{2}{|c|}{$\inferrule*[left = (Assign)]{}{e,v= \expr \stoverto{\tau} e[v\mapsto \eval(\expr,e)],\top}$} \\[1mm]
+& & \multicolumn{2}{|c|}{$\inferrule*[left = (After)]{}{e,y!\mathfrak{m}~{\it after} ~\expr\stoverto{(e({\it self}),\mathfrak{m},y,e(\now)+\eval(\expr,e))!} e,\top}$} \\[2mm]
+& & \multicolumn{2}{|c|}{$\inferrule*[left = (Delay)]{}{e,\delay(\expr)\stoverto{\tau} e[\rt\mapsto e(\now)+\eval(\expr,e)],{\it resume}}$} \\[2mm]
+& & \multicolumn{2}{|c|}{$\inferrule*[left = (Resume)]{e(\now)==e(\rt)}{e,{\it resume}\stoverto{\tau}e[\rt\mapsto \bot],\top}$}\\
+\hline
+%-------------Network
+{\begin{sideways}Network\end{sideways} & &   $\inferrule*[left = (Transfer)]{b\boverto{m!}b'\\m.\ar==e(\now)}{(e,b)\noverto{m!}(e,b')}$ & $\inferrule*[left = (Receive)]{b\boverto{m?}b'}{(e,b)\noverto{m?}(e,b')}$\\[1mm] 
+& \multicolumn{3}{c|}{$\inferrule*[left = (EnvSync 1)]{\include(m,b) \\\forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)\\e(\now)<t\le m.\ar}{(e,b)\noverto{t}(e,b)}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (EnvSync 2)]{
+%\include(m,b) \\ \forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)\\e(\now)<t< m.\ar
+{\it isEmpty}(b)
+}{(e,b)\aoverto{t}(e,b)}$}\\[1mm]\hline
+%---------------System
+\multirow{3}{*}{\begin{sideways}System\end{sideways}} &  \multicolumn{3}{c|}{$\inferrule*[left = (actorProgress)]{s(x)==(e^\ast,b,\sigma) \\ (e^\ast, b, \sigma)\aoverto{\tau}(e',b',\sigma')}{(e,s,n)\overto{\tau}(e,s[x\mapsto(e',b',\sigma')],n)}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (comm 1)]{s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m!}(e',q',\sigma')\\ n \noverto{m?}n'}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (comm 2)]{n\noverto{m!}n'\\m.rcv==x \\ s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m?}(e',q',\sigma')}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\
+& \multicolumn{3}{c|}{$\inferrule*[left = (EnvProgress)]{\cur==e(\now)\\\exists t\cdot(\forall x\in \ID\cdot (s(x)\aoverto{t}s(x))\wedge n\noverto{t}n)}{(e,s,n)\overto{t}(e[\now\mapsto \cur+t],s,n)}$}\\
+\hline
+\end{tabular}
+\end{table}
+
+
+As the bag of actors are unbounded, the interface function $\put$ has no limitation and its $?{\it putPolicy}$ is set to true. The interface function $\select$ non-deterministically chooses a message amongst the ones with the minimal arrival time from the bag. In other words, the selection policy is based on the arrival time of messages.
+
+
+The local state of an actor,  specified by $\langle id, V,\msgHandlr\rangle$, is defined by the triple $(e,b,\sigma)$ where $e$ define the value of state variables of actors and two reserved variables $\now$, denoting the global time, and $\rt$, denoting the resume time of an actor. In other words, $V\cup\{\self,\now,\rt\}=\domain(e)$ such that $e(\self)=id$. The rules \textsc{Receive} and \textsc{Internal} of the generic framework has no assumption, and we only define the assumptions of the rule \textsc{Take} and those of the statements. An actor processes messages based on their arrival time. As this policy is implemented by the select policy of buffer, we set the assumption $?{\it takePolicy}(e,b)$ to $\true$. This setting has two rules for the progress of time. When a rebec executes a delay statements, it should be suspended for the duration specified by the delay statement. Assume that the variable $\rt$ shows the time that the rebec should resume its execution. So, the time can progress from the point view of a rebec as long as it is suspended ($e(\now)<e(\rt)$) and not resumed yet ($e(\now)<t\le e(\rt)$). This is explained by the rule \textsc{EnvSync 1}. The rule \textsc{EnvSync 2} expresses that time can progress as long as the actor has no message to process and is not also busy with processing any message.
+
+This setting inherits all rules for the statements of the core Rebeca, given in Table \ref{Tab::ClassicRules}. We add the semantic rules of the newly added statements. The rule \textsc{After} defines the behavior for the send statement with after and the rule \textsc{Delay} for delay statement. Upon executing a delay statement, the environment variable $\rt$ is advanced with the amount specified in the delay statement. Then, the execution continues by executing the special statement $\it resume$. The rule \textsc{Resume} expresses that this statements can successfully terminates when the global time is equal to the resume time. As a result, the resume time is updated to $\bot$.
+
+The local state of the abstract network entity is defined in terms of the pair $(e,b)$ where $b\in \buffer$ and $e$ contains only one variable $\now$, denoting the global time. The network-level rule \textsc{Receive} is unchanged and only the rules \textsc{Transfer} and \textsc{EnvSync} should be modified. The rule \textsc{Transfer} is defined by specifying the transfer policy. A message is delivered to its receiver when its arrival time is equal to the global time. The rule \textsc{EnvSync 1} explains that time can progress as long as no message can be delivered. In case that the network buffer has no pending message, the time can pass from the point view of the network as expressed by the rule \textsc{EnvSync 2}.
+
+The global state of the system is defined by the triple $(e,s,n)$ where $e$ has only one variable called $\now$ denoting the global time. This setting inherits all the rules of the generic framework. Since no priority is considered for the delivery of messages, the assumption $?{\it priorityPolicy}$ is set to true in the rule \textsc{Comm 2}. The rule \textsc{EnvProgress} expresses that the global time can progress if all the actors and abstract network entity agree with this advancement and can synchronize with this progress. %In this rule $s'$ is defined as $x\in \ID$ if $s(x)\aoverto{t}(e',b',\sigma')$, then $s'(x)=(e',b',\sigma')$.
+
+
+%-------------------------------------------
+
+
+
+

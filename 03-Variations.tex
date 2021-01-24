@@ -1,0 +1,118 @@
+\section{Actor model Variations}\label{sec::combine}
+To illustrate the applicability of our framework, we define the formal semantics of actor-based languages by defining the types for defining the structure of buffers and message, and by specifying the parametric assumptions of the rules summarized in Table \ref{Tab::semanticPar}. The rules with no parametric assumption are inherited from the generic framework with no modification. For each language, we only consider those statements that do not limit the asynchronous communication like wait or callback statements. We define the structure of messages, $\buffer$s and $\envT$s for each level using abstract data types. %For the types $\buffer_{\it Actor}$ and $\buffer_{\it Net}$, the assumptions $?{\it putPolicy}(b)$ and $?{\it selectPolicy}(b)$ should be defined.
+
+We first provide the semantic rules of the Rebeca. Due to its design principle it is possible to extend the core language based on the desired domain \cite{sirjani2011ten}. We also go through its extension for the real-time domain, Timed Rebeca and then Hybrid Rebeca for cyber physical systems. Hybrid Rebeca extends Timed Rebeca with continuous behaviors, we show that Hybrid Rebeca inherits the rules of Timed Rebeca and so its semantic rules can be easily achieved. After Rebeca family, we focus on ABS and Lingua Franca.
+
+%The semantic rules of each actor-based language can be explicitly defined in terms of the meta-rules of the generic framework by specifying the structure of $\buffer$s and $\envT$s and unknown assumptions $?$ as given in  
+
+
+%In following subsections  to illustrate the applicability of our framework. 
+
+\subsection{Core Rebeca}
+Rebeca \cite{sirjani2004modeling} has a Java-like syntax, familiar to software developers, and it is also supported by a tool via an integrated modeling and verification environment \cite{afra}.  We briefly introduce the syntax of Rebeca. A Rebeca model consists of a set of class declarations and a main block. Actors, called rebecs, are instances of the defined \emph{reactive classes} in the model. Each class has three parts: \emph{state variables}, \emph{known rebecs}, and \emph{message servers}. Each class with the name $C$ has one message server called $C$, which acts like a constructor in object-oriented languages and performs the initialization tasks. The main block expresses the instanced rebecs; the  known rebecs of each actor and initial values of variables are passed via instantiating. 
+\begin{figure}[h]
+	\centering
+	\lstinputlisting[language=HRebeca, multicols=2]{"./Code/rebec.tex"}
+	\caption{A model of a monitor and an alarm specified in  Rebeca. The commented statements belong to Timed Rebeca.}
+	\label{fig:Controller}
+\end{figure}
+
+\begin{example}
+The Rebeca model given in Figure \ref{fig:Controller} shows a system composed of a monitor and an alarm. The monitor may be informed from the temperature of its environment by receiving a $\it check$ message. If the message is above the specified value $\it max$, it sends a $\it notify$ message to its known rebec of class $\it Alarm$ (line 19). In the main block, the known rebecs are passed via the first pair of parenthesis and actual value of constructors via the second pair of parenthesis. As the instance $\it alarm$ is the known rebec of instance $\it monitor$, it is first passed in via the first pair of parenthesis in line 37 and then initial value for $\it max$, i.e., $25$ via the second pair of parenthesis. 
+\end{example}
+
+Each Rebeca model is trivially converted into a system abstract syntax model. For simplicity, we have assumed that messages has no parameter. There is a mapping between the concepts of Rebeca model and the system abstract syntax model. The set of $\ID$ is defined by the name of instantiated rebecs. For each rebec of class $C$, the class message servers are $\msgHandlr$ of the rebec, class state variables are $\Var$. %while class known rebecs are its $\aqu$. 
+The names of all message servers determine the set of $\MName$. The set of $\Stmt$ for defining the body of message serves includes:\begin{itemize}
+    \item send statement $x!\mathfrak{m}$ that sends a message with the name $\mathfrak{m}\in\MName$ to the rebec with the identifier $x$.
+    \item assignment $v={\it expr}$ that assigns the value of the expression ${\it expr}$ to $v\in\Var$;
+    \item sequential composition $s_1;s_2$ that makes the two statements $s_1$ and $s_2$ execute sequentially.
+    \item conditional statement ${\it if}~ (\expr) ~s_1 ~{\it else}~s_2 $ that executes the statement $s_1$ and $s_2$ based on the Boolean value of $\expr$,
+\end{itemize}
+
+\subsubsection{Structure of Messages and Buffers}
+%We define the structure of actor buffers as an unbounded Fifo queue of messages $\buffer_{\it Actor}=\Fifo (\Msg)$. Assume the following functions on $\Fifo(D)$:\begin{itemize} 
+%\item $\frown:\Fifo(D)\times D\rightarrow \Fifo(D)$: specifies a queue that the given item has been added to the end of the given Fifo queue;
+%\item $\tail:\Fifo(D)\rightarrow \Fifo(D)$: specifies a queue that the head of given Fifo has removed;
+%\item $\head:\Fifo(D)\rightarrow D$: specifies the head element of the given queue.
+%end{itemize}
+The messages in this setting consists of three parts: sender identifier, message name, and receiver identifier. So the set of messages is defined as $\Msg = \ID\times\MName\times \ID$. We use dot notation $m.\rcv$ to access the receiver identifier.  
+
+We define the structure of actor buffers as an unbounded FIFO queue of messages. % by the two constructors $\empt: \buffer_{\it Actor}$, denoting an empty buffer, and $\frown: \Msg \times \buffer_{\it Actor}  \rightarrow \buffer_{\it Actor}$, appends a message to the buffer. 
+We define the following functions for manipulation of $\buffer_{\it Actor}$:\begin{itemize} 
+\item $\insert:\buffer_{\it Actor} \times \Msg\rightarrow \buffer_{\it Actor}$: given a buffer and message, this function inserts the message into the buffer;
+\item $\head:\buffer_{\it Actor} \rightarrow \Msg$: specifies the head element of the given queue;
+\item $\remove:\buffer_{\it Actor} \times \Msg \rightarrow \buffer_{\it Actor} $: if the given message is the head of the queue, it returns a queue by removing the head of the queue;
+\item $\size:\buffer_{\it Actor} \rightarrow \int$: denotes the number of elements in the buffer.
+\end{itemize}
+
+
+
+As the order of delivery of messages matches with the order of their sending for each actor, we define the structure of $\buffer_{\it Net}$ by a list of actor identifiers and their pending message queue. % by the two constructors $\empt: \buffer_{\it Net}$, denoting an empty set, and $\triangleright: \ID \times \buffer_{\it Actor} \times \buffer_{\it Net} \rightarrow \buffer_{\it Net}$. 
+We define the following functions on $\buffer_{\it Net}$:\begin{itemize} 
+\item $\insert:\buffer_{\it Net} \times \Msg\rightarrow \buffer_{\it Net}$: given a buffer and message, this function inserts the message into the queue of the receiving actor specified in the message.;
+%\item $\head:\buffer_{\it Actor} \rightarrow \Msg$: specifies the head element of the given queue;
+\item $\remove:\buffer_{\it Net} \times \Msg \rightarrow \buffer_{\it Net} $: it removes the given message from the queue of the receiving actor specified in the message,
+\item ${\it getBuff}:\buffer_{\it Net} \times \ID \rightarrow \buffer_{\it Actor} $: Given a buffer and an actor identifier, this function returns the actor buffer of actor.
+%\item $\size:\buffer_{\it Actor} \rightarrow \int$: denotes the number of elements in the buffer.
+\end{itemize}
+
+The formal description of buffer structures and their functions are given in Section \ref{sec::dataCore}.
+
+\subsubsection{Semantic Rules}
+The semantic rules derived from the generic framework are given in Tables \ref{Tab::ClassicRules}. %The assumptions of the rules are summerized in Table \ref{Tab::ClassicAssm}. 
+%\in \envT_{\it Actor}
+
+
+
+
+\begin{table}[]
+\centering
+\caption{The semantic rules of the classic Rebeca: $q\in \buffer_{\it Actor}$ and $b\in \buffer_{\it Net}$.}
+\label{Tab::ClassicRules}
+\begin{tabular}{|l|ccc|}
+\hline
+\multirow{2}{*}{\begin{sideways}Buffer\end{sideways}} & \multicolumn{1}{c|} {\begin{sideways}Actor\end{sideways}}&   $\inferrule*[left = (Select)]{\size(q)>0\\m==\head(q)}{q\boverto{m!}\remove(q,m)}$ & $\inferrule*[left = (Put)]{}{q\boverto{m?}\insert(q,m)}$\\[1mm] \cline{2-4} 
+& {\begin{sideways}Network\end{sideways}} & \multicolumn{2}{|c|}{$\inferrule*[left = (put)]{}{b\boverto{m?}\insert(b,m)}$}\\ [1mm]
+& & \multicolumn{2}{|c|}{$\inferrule*[left = (select)]{\exists x\in\ID \cdot \size({\it getBuff}(b,x))>0\\m==\head({\it getBuff}(b,x))}{b\boverto{m!}\remove(b,m)}$} \\[1mm]
+\hline
+%------------Actor
+\multirow{5}{*}{\begin{sideways}Actor\end{sideways}} & & $\inferrule*[left = ( Receive)]{q\boverto{m?}q'}{(e,q,\sigma)\aoverto{m?}(e,q',\sigma)}$ & 
+$\inferrule*[left = (Internal)]{e,\sigma\stoverto{\tau}e',\sigma'}
+{(e,q,\sigma)\aoverto{\tau}(e',q,\sigma')}$ \\[1mm]
+& \multicolumn{3}{c|}{$\inferrule*[left = (Take)]{q\boverto{m!}q'}{(e,q,\epsilon)\aoverto{m}(e,q',\msgHandlr(m.\name))}$} \\[1mm] \cline{2-4}
+%---------------Statement
+& \multirow{3}{*}{\begin{sideways}Statement\end{sideways}} &
+\multicolumn{1}{|c}{$\inferrule*[left = (Cond 1)]{\eval(\expr,e)\\e,\sigma_1\stoverto{\tau}e',\top}{e,{\it if}~ (\expr) ~\sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$} & $\inferrule*[left = (Seq)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$\\[1mm]
+& &  \multicolumn{1}{|c}{$\inferrule*[left = (Cond 2)]{\neg\eval(\expr,e)\\e,\sigma_2\stoverto{\tau}e',\top}{e,{\it if}~ (\expr)~ \sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$} & $\inferrule*[left = (Send)]{}{e,y!\mathfrak{m} \stoverto{(e({\it self}),\mathfrak{m},y)!} e,\top}$\\[1mm]
+& & \multicolumn{2}{|c|}{$\inferrule*[left = (Assign)]{}{e,v= \expr \stoverto{\tau} e[v\mapsto \eval(\expr,e)],\top}$} \\[1mm]
+\hline
+%-------------Network
+{\begin{sideways}Network\end{sideways} & & $\inferrule*[left = (Receive)]{b\boverto{m?}b'}{(e,b)\noverto{m?}(e,b')}$   & $\inferrule*[left = (Transfer)]{b\boverto{m!}b'}{(e,b)\noverto{m!}(e,b')}$ \\[1mm] 
+\hline
+%---------------System
+\multirow{3}{*}{\begin{sideways}System\end{sideways}} &  \multicolumn{3}{c|}{$\inferrule*[left = (actorProgress)]{s(x)==(e^\ast,b,\sigma) \\ (e^\ast, b, \sigma)\aoverto{\tau}(e',b',\sigma')}{(e,s,n)\overto{\tau}(e,s[x\mapsto(e',b',\sigma')],n)}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (comm 1)]{s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m!}(e',q',\sigma')\\ n \noverto{m?}n'}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (comm 2)]{n\noverto{m!}n'\\m.rcv==x \\ s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m?}(e',q',\sigma')}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\
+\hline
+\end{tabular}
+\end{table}
+
+As the queue of actor buffers are unbounded, the interface function $\put$ has no limitation and its $?{\it putPolicy}$ is set to true. A Message can be selected from a queue, if there is at least one message in the queue. Furthermore, the actor buffer selection policy chooses the message at the head of the queue. Similar to the actor buffers, the pending message queue for each rebec is unbounded, so the interface function $\put$ for the network buffer has no limitation and its $?{\it putPolicy}$ is also set to true. The selection policy from the pending message queue of each rebec is similar to the actor buffers. It should be noted that network buffer non-deterministically chooses an actor to take from its pending message queue.
+
+
+The local state of an actor, specified by $\langle id, V,\msgHandlr\rangle$, is defined by the triple $(e,b,\sigma)$ where $e$ defines the value of the state variables of the actor such that $V\cup\{\self\}=\domain(e)$ and $e(\self)=id$. Rebecs can send message to themselves by using the reserved word $\it self$. The classic Rebeca has three actor-level rules \textsc{Receive}, \textsc{Take}, and \textsc{Internal} for showing the behavior of actor, and five rules for its statements. The rules \textsc{Receive} and \textsc{Internal} of the generic framework has no assumption, and we only define the assumptions of the rule \textsc{Take} and those of the statements. In this setting, the take policy handles messages in the order of their arrival. As the select function interface of an actor buffer chooses a message from the head of the buffer, this policy is enforced by the select policy. So the assumption $?{\it takePolicy}(e,b)$ is set to $\true$. The rule \textsc{Send} defines the behavior for the send statement, the rule \textsc{Assign} for assignment, and the rule \textsc{Seq} for the sequential composition. In the rule \textsc{Assign}, $\eval(\expr,e)$ is the value of the expression $\expr$ with respect to the environment $e$. The two rules \textsc{Cond 1} and \textsc{Cond 2} express the behavior of the conditional statement. 
+
+The domain of environment for the network is empty. The classic Rebeca has two network-level rules \textsc{Receive} and \textsc{Transfer}. %As this setting has no time concept, there is no need to define the rule \textsc{EnvSync}. So we should only define the assumption $?{\it transferPolicy(e,b)}$. 
+The abstract network policy for dispatching the pending messages of each rebec based on their arrival. As the pending messages of each rebec are maintained based on their arrival in the data structure of the network buffer, $?{\it transferPolicy(e,b)}$ is set to $\true$ in the rule \textsc{Transfer}.
+
+The domain of environment for the system is empty. As for any $e^\ast\in\envT$, $e^\ast\cup \e=e$ and $e^\ast\setminus e=e$ when $\domain(e)=\emptyset$, the rules at the system level are simplified as illustrated in Table \ref{Tab::ClassicRules}. Since no priority is considered for the delivery of messages, the assumption $?{\it priorityPolicy}$ is set to true in the rule \textsc{Comm 2}. \fixme{Explain this more!} %As this setting has no time concept, there is no need to define the rule \textsc{EnvSync}.
+
+
+
+
+
+%We have summarized how the assumptions of rules have been defined. 
+
+
+
+

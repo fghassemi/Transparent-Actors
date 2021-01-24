@@ -1,0 +1,364 @@
+\subsection{Abstract Network Interface}
+The Abstract network entity has a container for maintaining all the messages received from the actors. We have defined the container as a multiset of messages. A multiset is a set that it can have multiple instances of an element.
+
+
+	\begin{figure}[htbp]
+		\centering
+		\lstinputlisting[language=Java]%, multicols=2
+		{./Fig/abstractNet.tex}
+		\caption{The interface of abstract network entity.}
+		\label{fig::abstractNet}
+	\end{figure}
+	
+Upon calling $\send(m)$, the message is inserted into the container. As depicted in Figure \ref{Fig::functions}, as a consequence of calling $\transfer()$,  a message is picked from the container and it is delivered to the receiving actor by calling the interface function $\receive(m)$.
+
+%We assume the type $\Media$ for representing the local states of the abstract network entity with the following interface methods:
+%\MS{I don't see the relation of these rules to what I see in the syntax of Rebeca. First I translated this to "the rules that affect Abstract Network" but still I was looking for the actions that trigger these rules, I could only find "send" maybe? We talked about these phases in the Intro but when I see SOS rules shouldnt I look for the relation to the syntax?
+
+%I think we should start by saying:
+%In actor models we distinguish three entities and we make them explicit: actors, their buffers, and the message soup which we call the abstract network.
+%Then if we start from the syntax (not rellay syntax, from our well-known actor) then we can talk about send and take. Then show that take and send are causing other actions. Or maybe only send is causing other actions.
+%Just some thoughts ...
+%My mind works top-down, I need to know up-front what are you talking about and why.
+%}
+
+%\begin{itemize}
+%\item $\send: \Msg\times\Media\rightarrow \Media$: by sending the given message $m$ to the the abstract network entity with the local state $n$, the state of the network entity may be updated to $\send(m,n)$.
+%\item $\transfer : \Media\times \ID\rightarrow \set(\Msg)$ : given the local state of the network $n$, it defines the set of messages that can be delivered to the actor with the given identifier.
+
+%\item $\remove:\Msg\times\Media\rightarrow\Media$ : given the local state of the network $n$, it removes the message $m$ (if it is maintained by $n$, otherwise the local state of the network is unchanged).
+%\end{itemize}
+
+
+\subsection{Buffer Interface}
+Each actor owns a buffer. We have defined the buffer as a multiset of messages. Upon calling $\receive(m)$, the message $m$ is inserted into the buffer if the beffer is not full. \FG{Otherwise an exception is generated?}
+
+	\begin{figure}[htbp]
+		\centering
+		\lstinputlisting[language=Java]%, multicols=2
+		{./Fig/actor.tex}
+		\caption{The interface of actor.}
+		\label{fig::abstractActor}
+	\end{figure}
+
+
+%We assume the type $\buffer$ for modeling the local state of the buffer entity of each actor with a set of functions over it: 
+%\begin{itemize}
+%\item $\receive:\Msg\times \buffer\rightarrow \buffer$ : given a message and the actor buffer, the buffer may be update. This function implements policies for the actor buffer management. This function is called at the moment a message is transferred by the network and pushed from the network into the actor buffer;
+%\item $\take:\buffer\rightarrow \set(\Msg)$ : given the actor buffer, it returns a set of messages that are ready to be processed;
+
+%\item $\remove:\Msg\times\buffer\rightarrow\buffer$ : given the buffer $q$, it removes the message $m$ (if it is maintained by $q$, otherwise the buffer is unchanged).
+%\end{itemize}
+
+\subsection{Semantic Model}
+We assume an intermediate model called abstract actor model for presenting the actor models irrespective to the concrete syntax of languages. We abstract from the send statement by the triples $\snd(a,b,\mathfrak{m})$ where $a$ is the sender, $b$ is the receiver, and $\mathfrak{m}\in\Msg$ is the message. The set of messages $\Msg$ is defined by $\ID\times \MName\times \ID\times \TagT$.
+
+To define the semantic model of a given abstract actor model $\mathcal{M}$ in terms of LTSs, we define the set of global states, semantic rules, initial states in the following sections.
+
+%Various actor-based modeling languages differ in terms of assumptions on the abstract network entity which dispatches messages among the actors, the policies for managing the buffer entity of actors, and the aspects of the system. We aim to define the semantic model of the core actor model such that it can be easily extended for various languages with different assumptions, policies, and settings with a minimal effort. We define the semantic model of actor-based systems in terms of transition systems. 
+ 
+
+%We encapsulate the first two variation points by defining a set of interface functions for the abstract network entity and buffer entity.  The aspects of the systems such as timing issue, supporting state variables, etc, are captured in the global states of a system. The definition of global states subsume the local states of the actors and the abstract network entity. Furthermore, the local states of actors subsume the local states of its buffer entity. %Based on the assumptions and policies, the internal structure, i.e., The local states of the abstract network and buffer entity are defined. , the state of  or the local states of its actors. 
+%Thus the definition of global system states and local states of actor encapsulate the variations on system settings. 
+
+
+\subsubsection{Global states}
+The set of global states consists of triples in the form of $(s,n,\env)$ where $s: \ID\rightarrow \local$ maps each actor identifier to its local state, $n$ is the local state of the abstract network entity, and $\env:\envT$ is an additional information on the environment of the actors. 
+
+The set of actor local states $\local = \buffer\times 
+\Stmt^\ast$ is defined by the buffer and a sequence of statements that the actor should execute. 
+
+
+
+\subsubsection{Semantic rules}
+We divide the semantic rules into two categories: one for the statements and the other for the distributed entities, i.e., actors and abstract network entity, communicating with each other.   
+
+
+
+%\subsubsection{Semantic rules for the actor system}
+\begin{itemize}
+
+\item handling a message: an actor enquires its buffer to take a message among the ones that are ready to be processed. %It selects one non-deterministically among them  and then executes the body of the corresponding method.
+\[
+\Rule{\begin{array}{c}s(x)=(b,\top)~~m= \take(b)~~\cond(e)%\\
+%n,\body(x,m) \overto{} n',\sigma
+\end{array}}{(s,n,e)\overto{\take(m)}(s[s(x)\mapsto (\remove(b,m),\body(x,m))],n,e)}:{\it handle}
+\] 
+
+%\item queue overflow:
+%\[\Rule{m=(y,\mathfrak{m},x)\in \transfer(n) ~~~ ~~s(x)=(v,q,\sigma)~~~\receive(q,m)=\bot}{(s,n)\overto{\error}\error}\]
+
+
+%\[
+%\Rule{s(x)=(q,\langle y!\mathfrak{m}|\sigma\rangle )~~\send((x,\mathfrak{m},y),n)=n'}{(s,n)\overto{\tau}(s[s(x)\mapsto (q,\sigma)],n')}
+%\]  
+
+\item dispatching a message: This rule expresses the semantics of dispatching a message to a receiver by the network. Using its policy, it chooses a message to be delivered by calling $\transfer$, and the message is removed from the network buffer.
+
+\[\Rule{m=\transfer(n,x) ~~~ ~~s(x)=(b,\sigma)}{(s,n,e)\overto{\tau}(s[s(x)\mapsto (\receive(b,m),\sigma)],\remove(m,n),e)} :{\it dispatch}
+\]
+
+\item concurrency: 
+\[
+\Rule{s(x)=(b,\sigma)~~~~n,\sigma\overto{\tau}n',\sigma'}{(s,n,e)\overto{\tau}(s[s(x)\mapsto (b,\sigma')],n',e)}
+ \]    
+\end{itemize}
+
+As the send statement only affects the abstract network entity, we define the semantics of statements only in terms of the local state of the abstract network entity. % and the local states of the buffer
+
+\begin{itemize}
+\item send statement: the message $(x,\mathfrak{m},y)$ is delivered to the abstract network entity $n$ by calling its $\send$ interface, then the local state of the abstract network may be updated. 
+\[
+\FAxiom{n,\snd(x,y,\mathfrak{m}) \overto{\tau} \send((x,\mathfrak{m},y),n),\top} %)~~\send((x,\mathfrak{m},y),n)=n'}{(s,n)\overto{\tau}(s[s(x)\mapsto (q,\sigma)],n')}
+\]  
+\item sequential composition: %The effect of the first statement on the network is 
+\[
+\Rule{n,\sigma_1\overto{\tau}n',\top}{n,\sigma_1;\sigma_2\overto{\tau}n',\sigma_2}
+\]
+\end{itemize}
+
+\section{Timed Rebeca}
+
+
+\subsection{Timed Rebeca Abstract Network Entity}
+
+Here, there is a global time $T$.
+Also, $Msg$ has a that shows its delivery time.
+\begin{lstlisting}[language=java,escapechar=|]
+class AbstractNetwork {
+    MultiSet<Msg> container;
+   
+    send(m: Msg) {
+        container.add(m);
+    }
+   
+    Set<Msg> pick() {
+        Set<Msg> retValue;
+        int minTime;
+        foreach msg in container
+            minTime = min(minTime, msg.arrival);
+        foreach msg in container
+            if (msg.arrival == minTime)
+                retValue.add(msg);
+    }
+    
+    Msg transfer() {
+        Set<Msg> ready2Deliver = pick(container);
+        // the policy to select a message m from the ready2Deliver
+    }
+}
+\end{lstlisting}
+
+	
+Upon calling $\send(m)$, the message is inserted into the container. As depicted in Figure \ref{Fig::functions}, as a consequence of calling $\transfer()$,  a message is picked from the container and it is delivered to the receiving actor by calling the interface function $\receive(m)$.
+	
+\subsection{Timed Rebeca Buffer Entity}
+
+%------------------------
+
+\subsubsection{The Abstract Network Entity}\label{classic::network}
+The abstract network in this extension should guarantee in-order delivery. This means that if an actor sends two messages to a receiver, the order of message reception is the same as the order of message sending.  Thus, the local state of the abstract network entity can be defined as set of queues, one for each actor. 
+
+We assume the unbounded queue type $\Queue(\Msg)$ which maintains the elements of $\Msg$ with the following type interfaces: 
+\begin{itemize}
+    \item ${\it insert}(q,m)$: appends the message $m$ to the end of the queue. 
+    \item ${\it head}(q)$: returns the first item of the queue if the queue is not empty.
+    \item ${\it tail}(q)$: returns the tail of the queue.
+    \item ${\it size}(q)$: specifies the number of elements in the queue.
+    
+\end{itemize}
+
+Thus the type $\Media=\ID\rightarrow \Queue(\Msg)$ By using the interface function of the queue type, we define the abstract network interface functions.
+\begin{itemize}
+	\item $\send((x,\mathfrak{m},y),n)=n[n(y)\mapsto{\it insert}((x,\mathfrak{m},y),n(y))] $; the message is inserted into the queue of the receiver.
+	\item $\transfer(n,x)=\{{\it head}(n(x))\}$;
+	\item $\remove((x,\mathfrak{m},y),n)=n[n(y)\mapsto{\it tail}(n(y))]$.
+\end{itemize}  
+
+\subsubsection{Buffer Entity}\label{classic::buffer}
+The buffer entity is defined as $\buffer= \Queue_n(\Msg)$, a bounded queue of capacity $n$ with the similar interfaces as the unbounded queue .  
+
+\begin{itemize}
+\item $\receive(m,b)={size(b)<n}\Rightarrow {\it insert}(b,m) $;\FG{how error of overflow is handled}
+\item $\take(b)={\it head}(b)$;
+\item $\remove(m,b)={\it tail}(m,b)$.\FG{m is not of important}
+\end{itemize} 
+
+\subsection{Timed Rebeca}
+We define the three types $\InfoT$, $\Media$, and $\buffer$ to extend the basic framework for the time setting.
+
+\subsubsection{Message}
+We assume that the additional information appended to the messages of $\Msg$ are of $\InfoT = \mathbb{N}\times \mathbb{N}$ to express the \emph{arrival time} and the \emph{deadline} of the message. %So, each message $m\in \Msg = \Content\times \InfoT$ can be partitioned into two parts $\msgaPart(m)$ for the content and $\info(m)$ for the appended information.  Furthermore, the the arrival time and the deadline information can be accessed by using $\ar(\info(m))$ and $\dt(\info(m))$, respectively. 
+
+
+\subsubsection{The Abstract Network Entity}\label{timed::network}
+The abstract network in this extension should guarantee the delivery of the messages in terms of their arrival time and still guarantee in-order delivery for the messages that arrive at the same time to a receiver. %This means that if an actor sends two messages to a receiver, the order of message reception is the same as the order of message sending.  
+The local state of the abstract network entity has two parts; a message container and the global time. The message container is defined as set of bags, one for each actor. 
+
+We assume the bag type $\bag(\Msg)$ which maintains the elements of $\Msg$ with the following type interfaces: 
+\begin{itemize}
+    \item ${\it insert}(q,m)$: inserts the message $m$ into the bag. 
+    %\item ${\it head}(q)$: returns the first item of the queue if the queue is not empty.
+    %\item ${\it tail}(q)$: returns the tail of the queue.
+    \item ${\it size}(q)$: specifies the number of elements in the bag.
+    
+\end{itemize}
+
+Thus the type $\Media=\ID\rightarrow \bag(\Msg)\times \mathbb{N}$ By using the interface function of the queue type, we define the abstract network interface functions.
+\begin{itemize}
+	\item $\send(((x,\mathfrak{m},y),(a,d)),(c,t))=(c[c(y)\mapsto{\it insert}(((x,\mathfrak{m},y),(a,d)),n(y))],t) $; the message is inserted to the bag of the receiver.
+	\item $\transfer((c,t),x)=\{((x,\mathfrak{m},y),(a,d))\mid \exists ((x,\mathfrak{m},y),(a,d))\in c(y)\,\wedge\, a==t\}$;
+	%\item $\remove((x,\mathfrak{m},y),n)=n[n(y)\mapsto{\it tail}(n(y))]$.
+\end{itemize}  
+
+\subsubsection{Buffer Entity}\label{timed::buffer}
+The buffer entity is defined as $\buffer= \bag(\Msg)$, a bounded bag of capacity $n$ with the similar interfaces as the unbounded bag .  
+
+\begin{itemize}
+\item $\receive(m,b)={size(b)<n}\Rightarrow {\it insert}(b,m) $;\FG{how error of overflow is handled}
+\item $\take(b)=\{((x,\mathfrak{m},y),(a,d))\,\mid\,\nexists ((x',\mathfrak{m},y),(a',d'))\in b\,\wedge \, a>a'\}$;
+%\item $\remove(m,q)={\it tail}(m,q)$.
+\end{itemize} 
+
+%----------------
+\begin{table}[]
+\centering
+\caption{The types and assumptions that should be defined}\label{Tab::semanticPar}
+\begin{tabular}{|c|c|l|l|}
+\hline
+\multirow{2}{*}{Level} & \multirow{2}{*}{Relation} & \multicolumn{2}{c|}{Rule} \\ \cline{3-4} 
+                       &                       & Name     & Assumption     \\ \hline
+          Buffer             &      
+          \begin{tabular}[c]{@{}l@{}}$\boverto{ }$ \end{tabular}   &      
+          \begin{tabular}[c]{@{}l@{}} \textsc{put}\\\\\textsc{select} \end{tabular}    &   
+          \begin{tabular}[c]{@{}l@{}} $?{\it putPolicy}:\buffer\times \Msg\rightarrow \bool$\\$?\insert:\buffer\times \Msg\rightarrow\buffer$\\$?{\it selectPolicy}:\buffer\times \Msg\rightarrow \bool$\\$?\remove: \buffer\times \Msg\rightarrow\buffer$ \end{tabular} \\ \hline
+%----------------------------------------------------------------------------------------------
+  Actor                     &
+  \begin{tabular}[c]{@{}l@{}}$\aoverto{}$ \end{tabular} &
+  \begin{tabular}[c]{@{}l@{}} \textsc{Receive}\\ \textsc{Take} \\\textsc{Internal}\\\textsc{EnvSync} \\ $s\in\Stmt$ \\\\ \end{tabular}  &  
+  \begin{tabular}[c]{@{}l@{}} - \\ $?{\it readyToTake}:\envT\times \buffer\rightarrow \bool$ \\$?{\it notSuspended}:\envT \rightarrow \bool$ \\$?{\it synCondition}:\envT\times \buffer\rightarrow \bool$ \\ $?{\it stCondition}:\envT \times \Stmt\rightarrow \bool$\end{tabular}                \\ \hline
+ %------------------------------------------------------------------------------------------------
+ Network &
+ \begin{tabular}[c]{@{}l@{}}$b\in \buffer_{\it Net}$\\ $e\in \envT_{\it Net}$\end{tabular} & 
+ \begin{tabular}[c]{@{}l@{}} $\it receive$ \\ ${\it transfer}$ \\${\it envSync}$ \end{tabular}   &
+ \begin{tabular}[c]{@{}l@{}} - \\ $?{\it transferPolicy(e,b)}$ \\$?{\it synConditon}(e,b)$ \end{tabular} \\ \hline
+ %------------------------------------------------------------------------------------------------
+ System & 
+ $\envT_{\it Sys}$ &
+  \begin{tabular}[c]{@{}l@{}} $\it actorProgress$ \\ ${\it comm}_1$ \\ ${\it comm}_2$\\${\it envProgress}$ \end{tabular}   &
+  \begin{tabular}[c]{@{}l@{}} - \\ - \\ - \\${\it envProgress}$ \end{tabular}    \\ \hline
+
+\end{tabular}
+
+\end{table}
+
+% Rebeca Table 
+\begin{table}[]
+\centering
+\caption{The semantic rules of the classic Rebeca: $q\in \buffer_{\it Actor}$ and $b\in \buffer_{\it Net}$.}
+\label{Tab::ClassicRules}
+\begin{tabular}{|cc|}
+\hline
+$\inferrule*[left = (Act put)]{}{q\boverto{m?}\insert(q,m)}$ &
+$\inferrule*[left = (Net put)]{}{b\boverto{m?}\insert(b,m)}$  \\[1mm]%\vspace*{1mm}
+\multicolumn{2}{|c|}{$\inferrule*[left = (Act select)]{\size(q)>0\\m==\head(q)}{q\boverto{m!}\remove(q,m)}$} \\[1mm]%\vspace*{1mm}
+\multicolumn{2}{|c|}{$\inferrule*[left = (Net select)]{\exists x\in\ID \cdot \size(b(x))>0\\m==\head(b(x))}{b\boverto{m!}\remove(b,m)]}$}\\[1mm]
+$\inferrule*[left = (Act Receive)]{q\boverto{m?}q'}{(e,q,\sigma)\aoverto{m?}(e,q',\sigma)}$ & 
+$\inferrule*[left = (Internal)]{e,\sigma\aoverto{\tau}e',\sigma'}
+{(e,q,\sigma)\aoverto{\tau}(e',q,\sigma')}$ \\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (Take)]{q\boverto{m!}q'}{(e,q,\epsilon)\aoverto{m}(e,q',\msgHandlr(m.\name))}$} \\[1mm]
+$\inferrule*[left = (Net Receive)]{b\boverto{m?}b'}{(\Upsilon,b)\noverto{m?}(\Upsilon,b')}$   & $\inferrule*[left = (Transfer)]{b\boverto{m!}b'}{(\Upsilon,b)\noverto{m!}(\Upsilon,b')}$ \\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)==(e^\ast,b,\sigma) \\ (e^\ast, b, \sigma)\aoverto{\tau}(e',b',\sigma')}{(\Upsilon,s,n)\overto{\tau}(\Upsilon,s[x\mapsto(e',b',\sigma')],n)}$}\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (comm 1)]{s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m!}(e',q',\sigma')\\ n \noverto{m?}n'}{(\Upsilon,s,n)\overto{\gamma}(\Upsilon,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (comm 2)]{n\noverto{m!}n'\\m.rcv==x \\ s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m?}(e',q',\sigma')}{(\Upsilon,s,n)\overto{\gamma}(\Upsilon,s[x\mapsto(e',q',\sigma')],n')}$}\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{The semantic rules of the classic Rebeca statements.}
+\label{Tab::ClassicStmt}
+\begin{tabular}{|cc|}
+\hline
+$\inferrule*[left = (Send)]{}{e,y!\mathfrak{m} \stoverto{(e({\it self}),\mathfrak{m},y)!} e,\top}$ & $\inferrule*[left = (Seq)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (Assign)]{}{e,v= \expr \stoverto{\tau} e[v\mapsto \eval(\expr,e)],\top}$} \\[1mm]
+$\inferrule*[left = (Cond 1)]{\eval(\expr,e)\\e,\sigma_1\stoverto{\tau}e',\top}{e,{\it if}~ (\expr) ~\sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$ & $\inferrule*[left = (Cond 2)]{\neg\eval(\expr,e)\\e,\sigma_2\stoverto{\tau}e',\top}{e,{\it if}~ (\expr)~ \sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$\\
+\hline
+\end{tabular}
+
+\end{table}
+
+%-----------Timed Rebeca
+\begin{table}[]
+\centering
+\caption{The semantic rules of the Timed Rebeca.}
+\label{Tab::TimedRules}
+\begin{tabular}{|cc|}
+\hline
+\multicolumn{2}{|c|}{$\inferrule*[left = (Select)]{\include(m,b)\\\forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)}{b\boverto{m!}\remove(b,m) }$}\\[1mm]
+$\inferrule*[left = (put)]{}{b\boverto{m?}\insert(b,m) }$ & $\inferrule*[left = (Take)]{b\boverto{m!}b'}{(e,b,\epsilon)\aoverto{m?}(e,b',\body(m))}$\\[1mm]
+$\inferrule*[left = (Act Receive)]{q\boverto{m?}q'}{(e,q,\sigma)\aoverto{m?}(e,q',\sigma)}$ & 
+$\inferrule*[left = (Internal)]{e,\sigma\aoverto{\tau}e',\sigma'}
+{(e,q,\sigma)\aoverto{\tau}(e',q,\sigma')}$ \\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (Act EnvSync 1)]{e(\now)<e(\rt)\\e(\now)<t\le e(\rt)}{(e,b,\sigma)\aoverto{t}(e,b,\sigma)}$}\\[2mm] 
+\multicolumn{2}{|c|}{$\inferrule*[left = (Act EnvSync 2)]{%\begin{array}{c}
+\include(m,b) \\ \forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)\\e(\now)<t< m.\ar%\end{array}
+}{(e,b,\epsilon)\aoverto{t}(e,b,\sigma)}$}\\[1mm]
+$\inferrule*[left = (Net Receive)]{b\boverto{m?}b'}{(e,b)\noverto{m?}(e,b')}$ & $\inferrule*[left = (Transfer)]{b\boverto{m!}b'\\m.\ar==e(\now)}{(e,b)\noverto{m!}(e,b')}$\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (Net EnvSync)]{\include(m,b) \\\forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)\\e(\now)<t\le m.\ar}{(e,b)\noverto{t}(e,b)}$}\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)==(e^\ast,b,\sigma) \\ (e^\ast, b, \sigma)\aoverto{\tau}(e',b',\sigma')}{(e,s,n)\overto{\tau}(e,s[x\mapsto(e',b',\sigma')],n)}$}\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (comm 1)]{s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m!}(e',q',\sigma')\\ n \noverto{m?}n'}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (comm 2)]{n\noverto{m!}n'\\m.rcv==x \\ s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m?}(e',q',\sigma')}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (EnvProgress)]{\cur==e(\now)\\\exists t\cdot(\forall x\in \ID\cdot (s(x)\aoverto{t}s(x))\wedge n\noverto{t}n)}{(e,s,n)\overto{t}(e[\now\mapsto \cur+t],s,n)}$}\\[1mm]
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{The semantic rules of the Timed Rebeca statements.}
+\label{Tab::TimedStmt}
+\begin{tabular}{|c|}
+\hline
+%statements
+$\inferrule*[left = (After)]{}{e,y!\mathfrak{m}~{\it after} ~\expr\stoverto{(e({\it self}),\mathfrak{m},y,e(\now)+\eval(\expr,e))!} e,\top}$ \\[2mm]
+$\inferrule*[left = (Delay)]{\cur== e(\now)}{e,\delay(\expr)\stoverto{\tau} e[\rt\mapsto \cur+\eval(\expr,e)],{\it resume}}$ \\[2mm]
+$\inferrule*[left = (Resume)]{e(\now)==e(\rt)}{e,{\it resume}\stoverto{\tau}e[\rt\mapsto \bot],\top}$\\
+\hline
+\end{tabular}
+
+\end{table}
+%------------------------
+
+\begin{table}[]
+\centering
+\caption{The parameters of rules at each level that should be defined}\label{Tab::semanticPar}
+\begin{tabular}{@{}|c|c|l|l|l|@{}}
+\toprule
+\multirow{2}{*}{Level}  & \multirow{2}{*}{Relation} & \multicolumn{3}{l|}{Rule}                     \\ \cmidrule(l){3-5} 
+                        &                           & Name                    & Parameter        & Signature \\ \midrule
+\multirow{4}{*}{Buffer} & \multirow{4}{*}{$\boverto{\;\;\;}$}         & \multirow{2}{*}{\textsc{put}}    & $?{\it putPolicy}$    &  $\buffer\times \Msg\rightarrow \bool$    \\ \cmidrule(l){4-5} 
+                        &                           &                         & $?\insert$       &   $\buffer\times \Msg\rightarrow\buffer$   \\ \cmidrule(l){3-5} 
+                        &                           & \multirow{2}{*}{\textsc{select}} & $?{\it selectPolicy}$ &    $\buffer\times \Msg\rightarrow \bool$  \\ \cmidrule(l){4-5} 
+                        &                           &                         & $?\remove$       &  $\buffer\times \Msg\rightarrow\buffer$    \\ \midrule
+%------------------------------------------------------------------
+\multirow{7}{*}{Actor}  & \multirow{7}{*}{$\aoverto{}$}         & \textsc{Receive}                 &     -         &  -    \\ \cmidrule(l){3-5} 
+                        &                           & \textsc{Take}                    &    $?{\it takePolicy}$          & $\envT\times \buffer\rightarrow \bool$     \\ \cmidrule(l){3-5} 
+                        &                           & \textsc{Internal}                &    -         &  -   \\ \cmidrule(l){3-5} 
+                        &                           & \textsc{EnvSync}                 &    $?{\it synCondition}$         & $\envT\times \buffer\times \int\rightarrow \bool$    \\ \cmidrule(l){3-5} 
+                        &                           & \multirow{3}{*}{$s\in\Stmt$}   & $?{\it stCondition}$ &  $\envT \times \Stmt\rightarrow \bool$    \\ \cmidrule(l){4-5} 
+                        &                           &                         & $?{\it updEnv}$       &  $\envT \times \Stmt\rightarrow \envT$    \\ \cmidrule(l){4-5} 
+                        &                           &                         & $?{\it Continue}$     &  $\envT \times \Stmt\rightarrow \Stmt$    \\ \midrule
+%------------------------------------------------------------------
+\multirow{3}{*}{Network} & \multirow{3}{*}{$\noverto{}$}         & \textsc{Receive}                 &       -       &    -  \\ \cmidrule(l){3-5} 
+                         &                           & \textsc{Transfer}                &      $?{\it transferPolicy}$        &  $\envT\times \buffer\times \Msg\rightarrow \bool$    \\ \cmidrule(l){3-5} 
+                         &                           & \textsc{EnvSync}                 &       $?{\it synConditon}$         &   $\envT\times \buffer\times \int\rightarrow \bool$   \\ \midrule
+%---------------------------------------------------------------------------
+\multirow{4}{*}{System} & \multirow{4}{*}{$\overto{}$}         & \textsc{ActorProgress}           &      -        &    -  \\ \cmidrule(l){3-5} 
+                        &                           & \textsc{Comm 1}                  &      -        &   -   \\ \cmidrule(l){3-5} 
+                        &                           & \textsc{Comm 2}                  &     $?{\it PriorityPolicy}$         &   $(\ID\rightarrow \local)\rightarrow \bool$   \\ \cmidrule(l){3-5} 
+                        &                           & \textsc{EnvProgress}             &     $?{\it envUpd}$        &   $\gstate\times \int\rightarrow \bool $   \\ \bottomrule
+\end{tabular}
+
+\end{table}

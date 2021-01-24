@@ -1,0 +1,21 @@
+sort Buffer_Net;
+cons empty : Buffer_Net;
+     add : ID # Buffer_Actor # Buffer_Net -> Buffer_Net;
+map
+    insert : Buffer_Net #Msg -> Buffer_Net;
+    remove: Buffer_Net # Msg -> Buffer_Net;
+    size: Buffer -> Nat;
+
+var 
+ m: Msg;
+ q: Buffer_Actor;
+ b: Buffer_Net;
+ 
+eqn
+   insert(empty,m) = add(rcv(m),append(m,empty),empty);
+   insert(add(id,q,b),m) = 
+    if (rcv(m)==id, add(id,insert(m,q)),add(id,q,insert(b,m)));
+  
+   remove(empty,m) = empty;
+   remove(add(id,q,b),m) = 
+      if (rcv(m)==id,add(id,remove(q,m),b),add(id,q,remove(b,m)));

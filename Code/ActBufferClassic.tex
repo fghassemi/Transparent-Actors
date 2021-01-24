@@ -1,0 +1,19 @@
+sort Buffer_Actor;
+cons empty : Buffer;
+     append : Msg # Buffer_Actor -> Buffer_Actor;
+map
+    insert : Buffer_Actor # Msg -> Buffer_Actor;
+    head: Buffer_Actor -> Msg;
+    remove: Buffer_Actor # Msg -> Buffer_Actor;
+    size: Buffer_Actor -> Nat;
+
+var 
+ m,m': Msg;
+ q: Buffer_Actor;
+ 
+eqn
+   insert(empty,m) = append(m,empty);
+   insert(m,q) = append(m',insert(m,q));
+   head(append(m,q)) = m;
+   remove(empty,m) = empty;
+   remove(append(m',q),m) = if (m==m',q,append(m',q));

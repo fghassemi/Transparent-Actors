@@ -1,0 +1,164 @@
+\subsection{ABS}
+
+The ABS modeling language \cite{DBLP:conf/fmco/JohnsenHSSS10} is designed for filling the gap between structural modeling languages and implementation-close formalisms. ABS is designed in the object-oriented paradigm to make it easy to use for programmers. It also supports abstractions which are not supported in implementation languages (including functional data types, flexible concurrency and communication constructs, and cooperative scheduling). These abstractions make ABS models more configurable. 
+
+The concurrency model of ABS is based on concurrent objects, asynchronous method calls, and futures. Concurrent objects may be composed into concurrent object groups (COGs). Conceptually, each cog has a dedicated processor and lives in a distributed environment with asynchronous and unordered communication. Considering a cog, at most one process among the objects of the cog is active and the other processes are suspended. Processes in ABS are scheduled by nondeterministic policy, that is controlled by processor release points in a cooperative way. This way, the concurrency level in an ABS model is directly reflected in the number of cogs of the model. All communication is between named objects, typed by interfaces, by means of asynchronous method calls. Calls are asynchronous and the caller is able to decide at runtime when to synchronize with the response of a call.
+
+%Active behavior, triggered by an optional method run, is interleaved with passive behavior, triggered by asynchronous method calls. Thus, an object has a set of processes to be executed, which originate from method activations. Among these, 
+%A Creol-like concurrent object model corresponds to an ABS model in which each object has its own cog.
+\begin{example}
+The code of Figure~\ref{fig:abs:phils} presents the model of the dining philosophers problem in ABS. As shown in the main part (lines 30-39) there are two forks and two philosophers in this model. The initialization of the model takes place by sending the \texttt{behave} message to philosophers in lines 34 and 36. As shown by interface definitions, the \texttt{Philosophers} class has one message handler (i.e. \texttt{behave}, depicted in line 2) and the \texttt{Fork} class has two message handler (i.e. \texttt{grab} and \texttt{grab_second} in lines 5 and 6). Each philosopher takes its first fork by sending a grab message to (line 11), and the second fork is taken by sending grab_second message (line 21).
+\end{example}
+\begin{figure}[h]
+	\centering
+	\lstinputlisting[language=ABS]{"./Code/ABS.tex"}
+	\caption{A model of dining philosophers in  ABS.}
+	\label{fig:abs:phils}
+\end{figure}
+
+ABS models can be easily converted into the system abstract syntax model of Section~\ref{sec::AbstractSyntaxModel}. For simplicity, we have assumed that messages has no parameter. The set of $\ID$ is defined by the name of instantiated objects. For each object of class $C$, the class methods are $\msgHandlr$ of the object, class state variables are $\Var$. The name of all methods define the set of $\MName$. The set of $\Stmt$ for defining the body of methods includes:\begin{itemize}
+    \item send statement $x!\mathfrak{m}$ that sends a message with the name $\mathfrak{m}\in\MName$ to the object with the identifier $x$.
+    \item assignment $v={\it expr}$ that assigns the value of the expression ${\it expr}$ to $v\in\Var$;
+    \item sequential composition $s_1;s_2$ that makes the two statements $s_1$ and $s_2$ execute sequentially.
+    \item conditional statement ${\it if}~ (\expr) ~s_1 ~{\it else}~s_2 $ that executes the statement $s_1$ and $s_2$ based on the Boolean value of $\expr$,
+\end{itemize}
+Note that we do not support \emph{future} in this work.
+
+\subsubsection{Structure of Messages and Buffers}
+The set of messages in asynchronous message calls of ABS is defined as $\Msg = \ID \times \Var \times \ID$ which is a tuple of the identifier of the sender object, the method name, and the identifier of the receiver object. We use dot notation $m.s$ and $m.r$ to access the sender and receiver object identifiers of a given message $m$. We define the structure of object buffers in ABS as a multiset.
+
+
+In this setting the structure of actor and network buffers are identical and it is defined as a multiset. A multiset is a map that stores the multiplicity for each distinct member. %For a given multiset $ms$, the multiplicity of an element $e$ is denoted by $\nu(ms, e)$.
+%We define the structure of object buffers as a multiset of messages by the two constructors $\empt: \buffer_{\it Actor}$, denoting an empty buffer, and $\frown: \Msg \times \int \times \buffer_{\it Actor}  \rightarrow \buffer_{\it Actor}$, puts a message in the buffer. 
+We define the following mappings on $\buffer_{\it Actor}$:
+\begin{itemize} 
+\item $\insert:\buffer_{\it Actor} \times \Msg\rightarrow \buffer_{\it Actor}$: given a buffer and message, this function inserts the message into the buffer;
+\item $contains:\buffer_{\it Actor} \times \Msg \rightarrow boolean$: specifies that if the multiset contains the given message;
+\item $\remove:\buffer_{\it Actor} \times \Msg \rightarrow \buffer_{\it Actor} $: it returns a multiset by removing one instance of the given $\Msg$ from the multiset;
+\item $\size:\buffer_{\it Actor} \rightarrow \int$: denotes the number of elements in the buffer.
+%\item ${\it cnt}:\buffer_{\it Actor} \times \Msg \rightarrow \int$: denotes the multiplicity of given message in the given multiset .
+\end{itemize}
+
+
+
+%Mapping functions with the same semantics can be defined for $\buffer_{\it Net}$.
+
+%For a given multiset, we use $\oplus$ and $\ominus$ operators to add a message to the buffer and to remove a message from the buffer nondeterministically. The operations of \emph{put} and \emph{select} are defined using $\oplus$ and $\ominus$ as the following. 
+
+
+\subsubsection{Semantic Rules}
+The local state of an object inform of $\langle id, V, \msgHandlr\rangle$, is defined in terms of the triple $(e,b, \sigma)$ where $e$ defines the value of the state variables of the reactor such that $V\cup\{\self\}=\domain(e)$ and $e(\self)=id$, $b$ is its internal buffer and $\sigma$ is the sequence of currently executing statements. Table~\ref{Tab::ABS-semantics} illustrates the semantic rules of ABS which are different that of in the standard semantics rules.
+
+\begin{table}[]
+\caption{The semantic rules of ABS: $q\in \buffer_{\it Actor}$ and $b\in \buffer_{\it Net}$.}
+\label{Tab::ABS-semantic}
+\begin{tabular}{|l|cc|}
+\hline
+\multirow{3}{*}{\begin{sideways}Actor\end{sideways}}  &  $\inferrule*[left = (Act Put)]{q\boverto{m?}\insert(q, m)}{}$ & 
+$\inferrule*[left = (Act Select)]{contains(q, m)}{q\boverto{m!}\remove(b, m)}$\\
+& $\inferrule*[left = (Assign)]{e,v:=expr \stoverto{\tau}e[v\mapsto \eval(\expr,e)],\top}{}$ &
+$\inferrule*[left = (SeqComposition)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$ \\
+& \multicolumn{2}{|c|}{$\inferrule*[]{\inferrule*[left = (Take)]{q\boverto{m!}q'}{(e,q,\epsilon)\aoverto{m}(e,q',\msgHandlr(m.\name))}}{}$} \\
+\hline
+\multirow{4}{*}{\begin{sideways}Network\end{sideways}} & \multicolumn{2}{|c|}{$\inferrule*[]{?transferPolicy(e,b,m): true}{}$}\\
+& \multicolumn{2}{|c|}{$\inferrule*[left = (receive)]{b\boverto{m?}\insert(b, m)}{}$} \\
+\hline
+\begin{sideways}System\end{sideways} & \multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)=(e',q,\epsilon) \\ (e', q, \epsilon)\aoverto{m}(e',q',\sigma)\\ e(cog(x)) = \mathit{false}}{(e,s,n)\overto{m}(e[cog(x) \mapsto \mathit{true}],s[x\mapsto(e',q',\sigma)],n)}$} \\
+& \multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)=(e^\ast,q,\sigma) \\ (e\cup e^\ast, q, \sigma)\aoverto{\tau}(e',q',\sigma')\\ e(cog(x)) = \mathit{true}}{(e,s,n)\overto{\tau}(e,s[x\mapsto(e'\setminus e,q',\sigma')],n)}$} \\
+& \multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)=(e^\ast,q,\sigma) \\ (e\cup e^\ast, q, \sigma)\aoverto{\tau}(e',q',\epsilon)\\ e(cog(x)) = \mathit{true}}{(e,s,n)\overto{\tau}(e[cog(x) \mapsto \mathit{false}],s[x\mapsto(e'\setminus e,qش',\epsilon)],n)}$} \\
+
+\hline
+
+\end{tabular}
+\end{table}
+
+
+\begin{comment}
+%Three rules in Fig 8 of the paper
+%http://einarj.at.ifi.uio.no/Papers/johnsen10fmco.pdf
+%are like our rules for 
+%send
+%transfer
+%receive
+%take
+
+%The binding rule is the merge transfer and receive
+
+%Their rules are simple because they have no ordering, in Rebeca we have %...
+
+%How to model Future in ABS using Transparent Actors
+
+
+%Making explicit all the assumptions on Network and how messages are transferred.
+%ABS is abstracting that away.
+%LF is what?
+%Rebeca making it clear?
+
+%Historically: 
+ABS is based on concurrent objects, but they have a layer matched to actors
+%LF is based on Hardware/embedded systems DE with ports 
+
+%but they can be both seen as actors.
+
+%In Hybrid Rebeca we differentiate different network transfers
+%Gave us the idea of Transparent Actors ...
+%ABS has it implicit that there is no order
+%Rebeca has an order (partial order)
+%LF is completely ordered ... (total order? not really ...)
+
+\subsection{ABS Abstract Network Entity}
+%AbsNetwork = multiSet(Msg)
+%Msg = Process (ID , message name, param, future)
+
+%\send(message, abs) = abs \cup message
+
+%\transfer (abs) = 
+%{
+%    message \in abs 
+%      (message.receiver). receive(message) 
+%}
+
+	\begin{figure}[htbp]
+		\centering
+		\lstinputlisting[language=Java]%, multicols=2
+		{./Fig/ABSAbstractNet.tex}
+		\caption{The ABS abstract network entity.}
+		\label{fig::ABSabstractNet.tex}
+	\end{figure}
+	
+\subsection{ABS Buffer Entity}
+%------------------------------------
+%class Buffer {
+%    MultiSet<Msg> container;
+%    receive(m: Msg) {
+%        container.add(m);
+%    }
+%    take() {
+%        return container.nondeterministicPick();
+%    }
+%}
+%class Buffer 
+%{
+%   container : multiSet(Msg)
+   
+%   void receive (messsage : Msg)
+%   {
+%    container.add(message);
+%   }
+%   message take()
+%   {
+%        return message \in container
+%   }
+% }
+%--------------------------------
+
+
+	\begin{figure}[htbp]
+		\centering
+		\lstinputlisting[language=Java]%, multicols=2
+		{./Fig/ABSBuffer.tex}
+		\caption{The ABS bufferk entity.}
+		\label{fig::ABSBuffer.tex}
+	\end{figure}
+
+\end{comment}

@@ -1,0 +1,320 @@
+\documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate]{lipics-v2019}
+%This is a template for producing LIPIcs articles. 
+%See lipics-manual.pdf for further information.
+%for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
+%for british hyphenation rules use option "UKenglish", for american hyphenation rules use option "USenglish"
+%for section-numbered lemmas etc., use "numberwithinsect"
+%for enabling cleveref support, use "cleveref"
+%for enabling autoref support, use "autoref"
+%for anonymousing the authors (e.g. for double-blind review), add "anonymous"
+%for enabling thm-restate support, use "thm-restate"
+
+%\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
+
+\bibliographystyle{plainurl}% the mandatory bibstyle
+
+%\usepackage[usenames,dvipsnames]{color}
+%\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{listings}
+
+
+
+
+
+%-----------------------------------------
+%------------------------
+\lstdefinelanguage{Hrebeca}{
+	morekeywords={softwareclass, physicalclass,changemode, mode,inv,msgsrv,guard,delay,statevars, int,float,real,knownrebecs,if,else,self,main,Wire,CAN,bool,reactiveclass,true,false,guard},
+	otherkeywords={=>,<-,<\%,<:,>:,\#,@,'},
+	sensitive=true,
+	morecomment=[l]{//},
+	morecomment=[n]{/*}{*/},
+	morestring=[b]",
+	morestring=[b]',
+	morestring=[b]"""
+}
+\lstset{
+	language=Hrebeca,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	xleftmargin=10mm,
+	basicstyle={\scriptsize},
+	keywordstyle=\color{blue},
+	numbers=left,
+	numberstyle=\color{black},
+	numbersep=7pt,
+	stepnumber=1,
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=3,
+	numberblanklines=false,
+	frame=l
+}
+%--------
+%----------LISTING --------------
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+
+\lstdefinelanguage{LF}{
+  keywords={after, reaction, preamble, target, reactor, composite, trigger, input, output, new, action, physical, clock, actor, int, main, Main, state, timer, init, realtime, msec},
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinestyle{lfstyle}{
+  language=LF,
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{backcolour},   
+  keywordstyle=\bfseries,
+  breakatwhitespace=false,     
+  breaklines=true,         
+  captionpos=b,          
+  keepspaces=true,         
+  numbers=left,          
+  numbersep=5pt,
+  numberstyle=\tiny,
+  showspaces=false,        
+  showstringspaces=false,
+  showtabs=false,          
+  tabsize=1,
+  xleftmargin=5mm,
+  xrightmargin=5mm
+}
+\lstdefinelanguage{ABS}{
+  keywords={interface, class, implements, Fut, Int, Unit},
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinestyle{absstyle}{
+  language=ABS,
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{backcolour},   
+  keywordstyle=\bfseries,
+  breakatwhitespace=false,     
+  breaklines=true,         
+  captionpos=b,          
+  keepspaces=true,         
+  numbers=left,          
+  numbersep=5pt,
+  numberstyle=\tiny,
+  showspaces=false,        
+  showstringspaces=false,
+  showtabs=false,          
+  tabsize=1,
+  xleftmargin=5mm,
+  xrightmargin=5mm
+}
+\lstdefinelanguage{ADT}{
+  keywords={sort,var,eqn,cons,map,if},
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinestyle{adtstyle}{
+  language=ADT,
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{backcolour},   
+  keywordstyle=\bfseries,
+  breakatwhitespace=false,     
+  breaklines=true,         
+  captionpos=b,          
+  keepspaces=true,         
+  numbers=left,          
+  numbersep=5pt,
+  numberstyle=\tiny,
+  showspaces=false,        
+  showstringspaces=false,
+  showtabs=false,          
+  tabsize=1,
+  xleftmargin=5mm,
+  xrightmargin=5mm
+}
+
+\lstset{language=ABS,style=absstyle}
+\lstset{language=ADT,style=adtstyle}
+\lstset{language=LF,style=lfstyle}
+\lstset{style=mystyle}
+
+
+\usepackage{fancybox}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage{latexsym}
+%\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{5}
+\usepackage{graphicx}
+\usepackage{alltt}
+\usepackage{multicol}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{mathtools}
+%\usepackage{ragged2e}
+\usepackage{mathpartir}
+\usepackage{syntax}
+\usepackage{comment}
+%\usepackage{ifthen}
+\usepackage{booktabs}
+\usepackage{multirow}
+%\usepackage{biblatex}
+%\addbibresource{ref.bib}
+\usepackage{wasysym}
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,positioning,decorations.pathmorphing,shapes,calc}
+%-----COMMANDS----------------------
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}
+
+\newcounter{sarrow}
+\newcommand\xrsquigarrow[1]{%
+\stepcounter{sarrow}%
+\mathrel{\begin{tikzpicture}[baseline= {( $ (current bounding box.south) + (0,-0.5ex) $ )}]
+\node[inner sep=.5ex] (\thesarrow) {$\scriptstyle #1$};
+\path[draw,<-,decorate,
+  decoration={zigzag,amplitude=0.7pt,segment length=1.2mm,pre=lineto,pre length=4pt}] 
+    (\thesarrow.south east) -- (\thesarrow.south west);
+\end{tikzpicture}}%
+}
+
+\providecommand\longrightarrowRHD{\relbar\joinrel\relbar\joinrel\mathrel\RHD}
+\providecommand\longrightarrowrhd{\relbar\joinrel\relbar\joinrel\mathrel\rhd}
+\makeatletter
+\providecommand*\xrightarrowRHD[2][]{\ext@arrow 0055{\arrowfill@\relbar\relbar\longrightarrowRHD}{#1}{#2}}
+\providecommand*\xrightarrowrhd[2][]{\ext@arrow 0055{\arrowfill@\relbar\relbar\longrightarrowrhd}{#1}{#2}}
+\makeatletter
+
+
+
+\newcommand{\Rule}[2]{                                  % operational rule
+	\frac{\raisebox{.7ex}{\normalsize{$#1$}}}
+	{\raisebox{-1.0ex}{\normalsize{$#2$}}}}
+
+\newcommand{\FAxiom}[1]{                                  % operational rule
+	{\normalsize {#1}}
+}
+\newcommand{\overto}[1]{\stackrel{#1}{%
+		\overrightarrow{\smash{\,\scriptsize{\phantom{#1}}\,}}}}
+\newcommand{\aoverto}[1]{\xrightarrowrhd{#1}}
+\newcommand{\noverto}[1]{\xrightarrowRHD{#1}}
+\newcommand{\stoverto}[1]{\stackrel{#1}{%
+		\lhook\joinrel\xrightarrow{\smash{\,\scriptsize{\phantom{#1}}\,}}}}
+\newcommand{\boverto}[1]{\xrsquigarrow{#1}}
+
+\newcommand{\MS}[1]{{\color{blue}\textbf{MS:} #1}}
+\newcommand{\FG}[1]{{\color{green}\textbf{FG:} #1}}
+\newcommand{\HH}[1]{{\color{green}\textbf{HH:} #1}}
+\newcommand{\fixme}[1]{{\color{red}\textbf{fixme:} #1}}
+
+
+%------DEFINITIONS------------------------
+
+\input{definitions}
+\newtheorem{defn}{Definition}
+
+
+\let\emptyset\varnothing
+%---------------------
+%----------------------------------
+\title{Transparent Actor Models}
+\author{Fatemeh, Ehsan, Hossein, Marjan}{Dummy University Computing Laboratory, [optional: Address], Country \and My second affiliation, Country \and \url{http://www.myhomepage.edu} }{johnqpublic@dummyuni.org}{https://orcid.org/0000-0002-1825-0097}{(Optional) author-specific funding acknowledgements}
+\authorrunning{J.\,Q. Public and J.\,R. Public} %TODO mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et al.'
+
+\Copyright{Fatemeh, Ehsan, Hossein, Marjan} %TODO mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
+
+\ccsdesc[100]{\textcolor{red}{Replace ccsdesc macro with valid one}} %TODO mandatory: Please choose ACM 2012 classifications from https://dl.acm.org/ccs/ccs_flat.cfm 
+
+\keywords{Dummy keyword} %TODO mandatory; please add comma-separated list of keywords
+
+\begin{document}
+
+
+
+% a short form should be given in case it is too long for the running head
+%\titlerunning{Choreography-based Runtime Verification}
+
+
+%\author{XX \and YY \and ZZ}
+%\institute{M. Samadi \at
+%	University of Tehran, Iran \\
+%	\email{mbh.samadi@ut.ac.ir}
+%	\and
+%	F. Ghassemi \at
+%	University of Tehran, Iran \\
+%	\email{fghassemi@ut.ac.ir} \and
+%	R. Khosravi \at
+%	University of Tehran, Iran \\
+%	\email{r.khosravi@ut.ac.ir}    }
+
+\maketitle
+
+
+%---------------------------------------------
+
+\begin{abstract}
+The classical computational model of actors has been proposed for modeling event-based asynchronous communicating distributed systems. This model abstracts away from the effect of network by defining how messages are dispatched among the entities.  Message delivery is guaranteed with no restriction on the order of messages. Furthermore, no policy is considered for handling the received messages. Many different formal modeling languages have been proposed based on this computational model. Each language imposes a set of assumptions on the delivery of messages or the policy by which the buffer messages are handled. These assumptions may depend on the domain of systems and the network settings. These assumptions are implicitly considered in the semantics of languages, which makes the comprehension of languages cumbersome. Following the same computational model of actors, we propose a generic framework, called transparent actor model, in which such assumptions become explicit in the semantics of languages through implementing a set of interfaces. To illustrate the applicability of our framework, we formalize the semantics of various actor-based languages in the literature in terms of our framework. This unified framework alleviates to generalize the existing theories for different settings.
+
+%%The classical computational model of Actors for asynchronous communicating distributed systems considers a very abstract model of network by which only packet delivery is guaranteed. The policy by which the message buffers are handled is not defined. Different network settings like Ethernet, wireless, CAN bus have different effects on how messages are dispatched between entities in a distributed systems. Different policies on the delivery of messages, e.g., overwriting old messages, dropping when the buffer is overflow, etc, or taking messages from the buffer regarding the priority or timestamps of messages have been ignored in this classical computational model. For the verification of distributed systems with model checking technique, different aspects of systems like timing, probabilistic, etc are considered to resolve the non-determinism. In practice, this abstract network model is boiled down to one specific model with concrete network model, policies, and system aspects.  %, e.g., to bag or FIFO queues for out-of-order and in-order delivery semantics.  
+
+%The behavior of network protocols and different policies for taking messages from the actor buffer have been weaved into the semantics of actors and this makes revisiting the actor-based framework like Rebeca for a new network settings. In addition to message transmission, there are variations at how the buffer of actors are managed to consider over-flow or the priority of messages for processing. 
+
+%%We aim at providing a generic framework for actor models %To consider these semantic variations, we factor out a network model and buffer management model from the actor model 
+%% a set of interface functions by which the modeler can define its desired network setting and buffer management policies. %semantics for the four phases of a point-to-point message communication: \textit{sending}, \textit{transmission}, \textit{receiving} , and \textit{taking}. 
+%%We define a set of abstract data types for the parameters of these functions and global states of the Actor model to encapsulate the aspects of systems.
+
+\end{abstract}
+
+
+\input{01-Introduction}
+\input{02-GenericFramework}
+\input{03-Variations}
+\input{04-TimedRebeca}
+\input{05-ABS}
+\input{06-LF}
+\input{Discussion}
+
+
+
+%\input{EhsanGeneralFW}
+
+%\bibliographystyle{plain}
+\bibliography{ref}
+\printbibliography{}
+\input{Appendix}
+\end{document}

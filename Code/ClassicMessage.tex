@@ -1,0 +1,10 @@
+sort Msg ;
+cons msg : ID # Name # ID;
+map
+   rcv : Msg -> ID ;
+   
+var 
+   i,j : ID;
+   n: Name;
+eqn 
+    rcv(msg(i,n,j)) = j;

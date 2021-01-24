@@ -1,0 +1,332 @@
+\subsection{Lingua Franca}
+
+\newcommand{\ReName}[0]{\mathit{ReName}}
+\newcommand{\outport}[0]{\mathit{out}}
+\newcommand{\inport}[0]{\mathit{in}}
+\newcommand{\action}[0]{\mathit{ac}}
+\newcommand{\reaction}[0]{\mathit{Reaction}}
+
+
+A given Lingua Franca (LF) model, is a collection of reactors and how they are connected together. Reactors are deterministic actors composed out of routines, called reactions, and coordinated under the DE semantics of Ptolemy. Reactions can be assumes as message handlers, and messages passing among reactors are timestamped and handled using the order of timestamps. Note that messages with identical timestamps are logically simultaneous and are handled in a deterministic order. For this case, the order of the definition of reactions determines their order. Reactors can also  share common state, have input and output ports, and actions. Composition of reactors is realized in the main reactor of the model. The connections among them define the flow of messages from an output port of a reactor to an input port of another one. An output port may be connected to multiple input ports, but an input port can only be connected to one output port \cite{DBLP:conf/cyphy/LohstrohRGDCLS19}. An example of a LF model is shown in Listing~\ref{src::LF}. 
+
+\begin{example} 
+The model presented in Listing~\ref{src::LF} contains the \texttt{Ramp} reactor which sends messages, yielding a sequence of numbers beginning at 0 with a time intervals given by its given value to the parameter \texttt{p}. The \texttt{Ramp} reactor defines an output port of type \texttt{int}, named \texttt{out}, a clock for triggering reactions periodically, and an input of type \texttt{int}, named \texttt{set}. This reactor has two reactions,  triggered by the clock and the input \texttt{set}. The first reaction increments the value of the state variable count and sends its new value to the \texttt{out} port. The second reaction sets the value of the counter to the given value. The \texttt{Print} reactor has an input port that triggers its only reaction which prints the value sent to its input port. The composition of reactors is presented in the main reactor, which contains instances of each of reactors and connects their ports. The bodies of reactions are written in some target language; in our example they are written in \texttt{C}. The target code in the figure is delimited by \texttt{\{=} and \texttt{=\}}.
+\end{example} 
+
+\begin{lstlisting}[language=LF, multicols=2, caption=Example of a \texttt{Ramp} feeding into a \texttt{Print} reactor (inspired from a LF model presented in \cite{DBLP:conf/dac/LohstrohSGWGSL19}), label=src::LF]
+reactor Ramp(p:int(10)) { 
+    input set:int;
+    output out:int;
+    state int count(0);
+    clock c(p);
+    
+    reaction(c) -> out {=
+        count ++;
+        set(out, count); 
+    =}
+    
+    reaction(set) {= 
+        count = set;
+    =} 
+}
+reactor Print { 
+    input in:int; 
+    reaction(in) {=
+        printf("%d\n", in); 
+    =}
+}
+main reactor System {
+    a = new Ramp(p=100);
+    b = new Print(); 
+    a.out -> b.in;
+}
+\end{lstlisting}
+
+A LF model is trivially converted into a system abstract syntax model with a minor extension. An abstract syntax of a reactor is defined as the tuple $\langle id, V, \msgHandlr, \inport, \outport\rangle $ where $id\in \ID$ is the reactor identifier, $V \subseteq \Var$ is the set of local variables, $\msgHandlr : \MName \rightarrow \Stmt^*$ define the set of statements an actor should execute in terms of the reactor name, $\inport \subseteq \Var$ and $\outport \subseteq \Var$ are input and output ports respectively. Note that $\MName$ contains the identifier of all of the reactions of reactors of a LF model. \fixme{Reactions do not have name! what shall we do for MName?}  %, $\action\subseteq \Var$ in the set of physical actions, $\reaction : \ReName \rightarrow \Stmt^*$ define the set of statement an actor should execute in terms of the reactor name.
+The set of $\Stmt$ for defining the body of reactor includes:\begin{itemize}
+    \item set value $set(v, val)$ that sets the value of the output port $v$ to the value $val$.
+    \item assignment $v={\it expr}$ that assigns the value of the expression ${\it expr}$ to $v\in\Var$.
+    \item sequential composition $s_1;s_2$ that makes the two statements $s_1$ and $s_2$ execute sequentially.
+\end{itemize}
+\fixme{syntax of LF reactors are target language dependent! -> we focus on the modeling of reactors not the details of reactions statements}
+
+The abstract syntax of the model in LF is the same as the system abstract syntax model.
+
+\subsubsection{Structure of Messages and Buffers}
+
+
+
+
+%In the following we will present an abstract syntax of LF models.
+
+%\begin{defn}[LF Actors Abstract Syntax Model]\label{Def::LFActor}
+%An abstract syntax of a LF reactor is defined by the tuple $\langle id, v, \inport, \outport, \action, \reaction\rangle $ where $id\in \ID$ is the reactor identifier, $v\subseteq \Var$ is the set of local variables, $\inport \subseteq \Var$ and $\outport \subseteq \Var$ are input and output ports respectively, $\action\subseteq \Var$ in the set of physical actions, $\reaction : \ReName \rightarrow \Stmt^*$ define the set of statement an actor should execute in terms of the reactor name.
+%\end{defn}
+
+% An actor-based system is composed of a set of actors and an abstract network. We define the abstract syntax model of the system: 
+
+% \begin{defn}[System Abstract Syntax Model]\label{Def::absActor}
+% An abstract syntax model of an actor-based system $\mathcal{M}$ is defined by the pair $\langle \ID, R,N\rangle $ where $R$ is a set of actor abstract syntax models and $N$ is the abstract model of the network entity.
+% \end{defn}
+
+% The messages in this setting consists of three parts: sender identifier, message name, and receiver identifier. So the set of messages is defined as $\Msg = \ID\times\MName\times \ID$. We use dot notation $m.\rcv$ to access the receiver identifier. 
+
+% The set of $\Stmt$ in this setting includes:\begin{itemize}
+%     \item send statement $x!\mathfrak{m}$ that sends a message with the name $\mathfrak{m}\in\MName$ to the actor with the identifier $x$.
+%     \item assignment $v:={\it expr}$ that assign the value of the expression ${\it expr}$ to $v\in\Var$;
+%     \item sequential composition $s_1;s_2$ that makes the two statements $s_1$ and $s_2$ execute sequentially.
+% \end{itemize}
+
+Time in LF is a pair of type $\Nat \times \Nat$. For a given time pair $(st,ms)$, $st$ is called the system time and $ms$ is called the micro-step in the system time. Messages in this setting are tuples of four parts: reactor identifier, port name, the sent value, and the message delivery time. So, the set of messages is defined as $\Msg = \ID \times \Var \times \Value \times (\Nat \times \Nat)$. We use dot notation $m.ac$, $m.po$, $m.va$, $m.ti$ to access the corresponding reactor identifier, the port identifier, the sent value, and the delivery time parts of a given message $m$.
+
+As mentioned before, reactions of a reactor has priority which is defined based on the order of definition of reactors in the LF code. So, in the case of having to ready to execute reactors, the reactor with the highest priority is executed before the reactor with the lowest priority. So, we define the structure of reactor buffers in LF as a stable priority queue (A priority queue is called stable, if popping elements with the same priority takes place in the same order as they are inserted). For a given stable priority queue, we use $\oplus$ and $\ominus$ operators to add a message to the queue with an associated priority and to remove the message from the queue that has the highest priority, respectively. The operations of \emph{put} and \emph{select} are defined using $\oplus$ and $\ominus$ as the following. 
+
+
+\subsubsection{Semantic Rules}
+The summary of the semantic rules of LF is presented in Table \ref{Tab::LF-semantic}. Note that the topology of a given LF model (including correspondence among input/output ports and their delay times) is defined by the function $map: \ID \times \Var \rightarrow \ID \times \Var \times \Nat$. This function maps its given reactor id and output port id to a tuple which contains the reactor id and input port id of the destination reactor, together with its delay time.
+
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+\begin{table}[]
+\caption{The semantic rules of Lingua Franca.}
+\label{Tab::LF-semantic}
+\begin{tabular}{|l|cc|}
+\hline
+\multirow{3}{*}{\begin{sideways}Actor\end{sideways}}  &  $\inferrule*[left = (Act Put)]{b\boverto{m?}b \oplus m}{}$ & 
+$\inferrule*[left = (Act Select)]{m \in b}{b\boverto{m!}b \ominus m}$\\
+& $\inferrule*[left = (Set)]{e,(p_o,v) \stoverto{(e(\self),p_o,v,(0,0))!}e,\top}{}$ &
+$\inferrule*[left = (Assign)]{e,v:=expr \stoverto{\tau}e[v\mapsto \eval(\expr,e)],\top]}{}$ \\
+& $\inferrule*[]{\inferrule*[left = (Take)]{b\boverto{m!}b'}{(e,b,\epsilon)\aoverto{m}(e,b',\msgHandlr(m.\name))}}{}$ & $\inferrule*[left = (SequentialComposition)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$ \\
+\hline
+\multirow{4}{*}{\begin{sideways}Network\end{sideways}} & \multicolumn{2}{|c|}{$\inferrule*[]{?transferPolicy(e,b,m): m.ti = e(now)}{}$}\\
+& \multicolumn{2}{|c|}{$\inferrule*[left = (receive)]{m=(a,p,v,(0,0)) \\ (a',p',t')=map(a,p) \\ t' = 0 \\ e(now)=(st,ms) \\ b\overto{(a',p',v,(st, ms + 1))?}b'}{(e,b)\overto{m?}(e,b')}$}
+ \\
+&  \multicolumn{2}{|c|}{$\inferrule*[left = (receive)]{m=(a, p, v, (0,0)) \\ (a', p', t')=map(a, p) \\ t' \neq 0 \\ e(now)=(st,ms) \\ b\overto{(a', p', v, (st + t', 0))?}b'}{(e,b)\overto{m?}(e,b')}$} \\
+& \multicolumn{2}{|c|}{$\inferrule*[left = (EnvSync)]{b\boverto{m!}b \ominus m \\ t=m.ti \\ e(now) \neq t} {(e,b)\overto{t}(e[\now\mapsto t],b)}$} \\
+\hline
+\begin{sideways}System\end{sideways} & \multicolumn{2}{|c|}{$\inferrule*[left = (EnvProgress)]{ n\noverto{t}n'} {(e,s,n)\overto{t}(e[\now\mapsto \cur+t],s,n')}$} \\
+\hline
+
+\end{tabular}
+\end{table}
+
+The local state of a reactor inform of $\langle id, V, \msgHandlr, \inport, \outport\rangle$, is defined in terms of the triple $(e,b, \sigma)$ where $e$ defines the value of the state variables of the reactor such that $V\cup\{\self\}=\domain(e)$ and $e(\self)=id$, $b$ is its internal buffer and $\sigma$ is the sequence of currently executing statements.
+
+Actors in LF do not have access to the current time; so, there is no need to define the rule \textsc{EnvSync}. So, LF has three actor-level rules \textsc{Receive}, \textsc{Take}, and \textsc{Internal} for defining the behavior of actor, and three rules for its statements. All of the actor-level rules of LF are the same as that of the generic framework, so they are inherited with no modification. We only define the assumptions $\mathit{?takePolicy}(e,b)$ to always return \texttt{true}. The formal definition of LF basic statements is presented in Table~\ref{Tab::LF-semantic}.
+
+\begin{comment}
+\begin{itemize}
+    \item this setting has the rule $\receive$ of the generic framework with no modification: 
+$$\inferrule*[left = (receive)]{b\boverto{m?}b'}{(e,b, \sigma)\aoverto{m?}(e, b', \sigma)}$$
+
+    \item In Lingua Franca, changing the value of an input port results in taking its corresponding message and calling its reactor as shown by the rule $\take$:
+
+$$\inferrule*[left = (take)]{b\boverto{m!}b' \\ e'=e[m.port\mapsto m.value]}{(e,b,\epsilon)\aoverto{m}(e',b',\msgHandlr(m.name))}$$
+
+We remark that the second condition of this rule addresses sequential execution of statements, corresponding to the taken message, which is defined as:
+
+$$\inferrule*[left = (internal)]{e,\sigma \aoverto{\alpha}e', \sigma'}{(e,b,\sigma)\aoverto{\alpha}(e',b,\sigma')}$$
+
+such that the statement-level rules are
+$$\inferrule*[left = (set)]{e,(p_o,v) \overto{(e(\self),p_o,v,(0,0))}e,\top}{}$$
+$$\inferrule*[left = (assignment)]{e,v:=expr \overto{\tau}e[v\mapsto \eval(\expr,e)],\top]}{}$$
+
+and $\eval(\expr,e)$ is the value of the expression $\expr$ with respect to the environment $e$. 
+
+\end{itemize}
+The statement-level rules of LF are:
+$$\inferrule*[left = (Set)]{e,(p_o,v) \stoverto{(e(\self),p_o,v,(0,0))!}e,\top}{}$$
+$$\inferrule*[left = (Assignment)]{e,v:=expr \stoverto{\tau}e[v\mapsto \eval(\expr,e)],\top]}{}$$
+$$\inferrule*[left = (SequentialComposition)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$$
+\end{comment}
+
+%\subsubsection{Semantic Rules of Abstract Network}
+
+Following the structure of the network in the general framework, the local state of the abstract network is defined in terms of the tuple $(e,b)$ where $e$ defines the value of the state variables of the network and $b$ is its internal buffer. The \textsc{Transfer} rule in LF is the same as that of in the general framework. But, as the network transfers messages with respect to their delivery time, we modify  $?{\it transferPolicy}$ to enable transferring for messages which their time is the same as the current time. The \textsc{Receive} rule receives a message containing its output port information and generates its corresponding message which has to be delivered to the receiver actor, containing information of the receiver id and port, the sent value, and transferring time using topology of the model. It is also responsible for taking care of timing issues of the message. If the message is sent without transferring time, the micro-step part of this message has to be set to the next micro-step.  But, if a transferring time is associated to binding of the ports of this message, the micro-step of transferring time has to be set to zero. Finally, rule \textsc{EnvSync} is defined to illustrate the minimum time progress which enables network to deliver a message. These three rules are shown in Table~\ref{Tab::LF-semantic}.
+
+Considering the system rules, \textsc{ActorProgress}, \textsc{Comm1}, and \textsc{Comm2} in LF are the same as that of in the general framework. The rule of \textsc{EnvProgress} in LF is updated to support time progress as shown in Table~\ref{Tab::LF-semantic}.
+
+\begin{comment}
+
+\begin{itemize}
+    \item This rules receives a message and generates its corresponding message which has to be delivered to the receiver actor, containing information of the receiver id and port, the sent value, and transferring time using topology of the model. It is also responsible for taking care of timing issues of the message. If the message is sent without transferring time, the micro-step part of this message has to be set to the next micro-step. But, if a transferring time is associated to binding of the ports of this message, the micro-step of transferring time has to be set to zero.
+$$\inferrule*[left = (receive)]{m=(a, p, v, (0,0)) \\ (a', p', t')=map(a, p) \\ t' = 0 \\ e(now)=(st,ms) \\ b\overto{(a', p', v, (st, ms + 1))?}b'}{(e,b)\overto{m?}(e,b')}$$
+$$\inferrule*[left = (receive)]{m=(a, p, v, (0,0)) \\ (a', p', t')=map(a, p) \\ t' \neq 0 \\ e(now)=(st,ms) \\ b\overto{(a', p', v, (st + t', 0))?}b'}{(e,b)\overto{m?}(e,b')}$$
+
+    \item the rule $\transfer$ only delivers messages to the receiver actors, considering their transferring time.
+    $$\inferrule*[left = (transfer)]{m=(a,p,v,t) \in b \\ e(now) = t}{(e,b)\overto{m!}(e,b')}$$
+
+    \item the rule $\mathit{synch}$ updates the value of environment variables with the given set of values.
+    $$\inferrule*[left = (synch)]{(e,b)\overto{env}(e \cup env, b)}{}$$
+
+    
+As the abstract network entity has no specific behavior, the behavior of its function interfaces are defined in terms of the behavior of its buffer as explicitly shown by the rules in above.
+
+\end{itemize}
+
+\subsubsection{Semantic Rules of Actor System}
+The global state of the system is defined by the triple $(e,s,n)$ where $e\in\envT_{\it Sys}$ has only one variable called $\now$ denoting the global time.
+
+\begin{itemize}
+    \item this rule is the simple version of the rule in the framework as the global environment is empty.
+    $$\inferrule*[left = (Actor Progress)]{s(x)=(e^\ast,b,\sigma) \\ (e^\ast, b, \sigma)\overto{\alpha}(e',b',\sigma') }{(e,s,n)\overto{\alpha}(e,s[x\mapsto(e',b',\sigma')],n)}$$
+
+\item the rule for the interaction from the actor to the network:
+$$\inferrule*[left = (Comm_1)]{s(x)=(e^\ast,b,\sigma)\\(e^\ast, b, \sigma)\overto{m!}(e',b',\sigma')\\( e^{\ast\ast},b^{\ast\ast})\overto{m?}(e'',b'')}{(s,(e^{\ast\ast},b^{\ast\ast}))\overto{m\uparrow}(s[x\mapsto(e',b',\sigma')],(e'' ,b''))}$$
+
+\item the rule for the interaction from the network the actor :
+$$\inferrule*[left = (Comm_2)]{(e^\ast, b, \sigma)\overto{m?}(e',b',\sigma') \\ ( e^{\ast\ast},b^{\ast\ast})\overto{m!}(e'',b'')}{(s,(e^{\ast\ast},b^{\ast\ast}))\overto{m\downarrow}(s[x\mapsto(e' ,b',\sigma')],(e'' ,b''))}$$
+
+
+\item As the environment is empty, it has no rule for the progress of the environment. 
+
+\end{itemize}
+\end{comment}
+\begin{comment}
+class Port
+{
+    name % a unique string, owner::port_name
+    priority
+}
+class LFAbstractNetwork {
+    MultiSet<Msg> container;
+    Port \rightarrow set(Port) topology;
+    %topology(controller::move)=train::move
+   
+    send(m: Msg) {
+        container.add(m);
+    }
+    %it is assumed that transfer() is called in each micro step
+    transfer() {
+        container.sort() ; %base on tag timed value
+        Set<Msg> enabledMsgs =container.head(); %those having the same timed value as the current model time 
+        % coordination 
+        queue(Msg) sortedMsgs = topologicalSort(enabledMsgs,topology); %events in each micro step are sorted
+        while (!sortedMsgs.isEmpty())
+        {
+            Msg m = sortedMsgs.head();
+            set<Port> ports = topology(m.getSendingPort());
+            while (ports!=empty)
+            {
+                % clone m
+                m.setRecievingPort(ports.head());
+                Actor actor = getActor(m.getReceiver());
+                actor.receive(m);
+            }
+             sortedMsgs = sortedMsgs.tail();
+        }        
+    }
+    
+    %run() {
+    % while ....
+    %    Msg m = transfer()
+    %    
+    %}
+}
+%class Coordinator 
+%{
+%    micro step
+%    macro step 
+    % responsible for incrementing the micro/macro step 
+    % as the topology is static, we decided to move it to the abstract network 
+    % the complication of having topological sort is a consequence of hardware system domains
+    
+%}
+
+class LFActor {
+    % the messages at the port can be read for several times, but can be processed for once. The read can be destructive
+    Map<Port, Boolean> isHandled;
+    Map<Port, Msg> buffer;
+
+    receive(m: Msg) {
+        //If queue is not full
+        isHandled.set(m.getReceiverPort(), false); %false means the message has not been handled yet
+        buffer.set(m.getReceiverPort(), m);
+    }
+    % we assumed that the take is non-destructive (the default of LF)
+    take() {
+        % sort based on the priority of ports
+        for(Port port : sort(buffer.getKeys())) {
+            % note that when a message is undefined, its corresponding value in isHandled is "true" 
+            if(isHandled.get(port) == false) {
+                Msg m = buffer.get(port);
+                isHandled.set(m.getReceiverPort(), true);
+                return m;
+            }
+        }
+    }
+    %run() {
+    %    Msg m = take()
+    %    execute m
+    %}
+}
+
+
+
+
+the following concepts are mapped:
+port to Buffer
+topological sort encapsulated in transfer
+set value to port = sending
+overwritting on port = receiving
+taking values from ports = take
+
+
+
+Msg : (AID\times MID\times AID \times MID \times Tag) \cup
+undefined
+% sender ID, sender port, receiver Id, receiver port, Tag (a pair of value)
+% AID : actor ID 
+% MID : Message name or Port
+class AbstractNetwork
+{
+    container : multiSet(Msg)
+    config : Port \rightarrow set(Port)
+    send(m: Msg)
+    {
+        m.setRecievingPort(config(m.sendingPort));
+        container.add(m);
+    }
+    transfer()
+    {
+        container.sort() ; %base on tag
+        set(Msg) tb =container.head();
+        queue(Msg) rd = topologicalSort(tb,config);
+        while (!rd.isEmpty())
+        {
+            Msg m = rd.head();
+            (m.receivingActor).receive(m);
+            rd = rd.tail();
+        }
+    }
+     %run() {
+    % while ....
+    %    Msg m = transfer()
+    %    
+    %}
+}
+
+class Buffer
+{
+    b : Port \rightarrow Msg \times Bool
+    %reaction and destructive
+    %priority over ports
+    priority : Port \rightarrow int
+    %the lower value, the higher priority
+    
+    receive(m:Msg)
+    {
+        b.update(m);
+    }
+    Msg take()
+    {
+        for all port p regarding priority
+            if !b(p).handled
+                Msg temp = b(p).message
+                % undefining the message , maybe we can use null
+                b.undefine(p)
+                return temp 
+    }
+}
+
+\end{comment}

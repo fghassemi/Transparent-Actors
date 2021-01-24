@@ -1,0 +1,54 @@
+physicalclass HeaterWithSensor (3)
+{
+    knownrebecs {
+        Monitor monitor;
+    }
+
+    statevar {
+        float temp;
+    }
+
+    HeaterWithSensor(float temp_) {
+        temp = temp_;
+        setmode(Off);
+    }
+
+    mode Off {
+        inv(temp >= 18) {
+            temp' = -1;
+        }
+
+        guard(temp <= 19) {
+            setmode(On);
+        }
+    }
+
+    mode On {
+        inv(temp <= 23) {
+            temp' = 1;
+        }
+
+        guard(temp >= 22) {
+            monitor.check(temp);
+            setmode(Off);
+        }
+    }
+}
+
+main
+{
+   HeaterWithSensor hws
+        (@CAN monitor):(20);
+   Monitor monitor (@Wire alarm):(25);
+   Alarm alarm():();
+   
+   	CAN{
+	   priorities{
+			hws	     Monitor.check		1;
+			monitor  Alarm.alarm		2;
+		}
+	   delays{
+			hws	     Monitor.check		0.5;
+			monitor  Alarm.alarm		0.7;}
+}}
+

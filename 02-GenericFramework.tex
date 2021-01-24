@@ -1,0 +1,199 @@
+\section{Generic Framework}\label{sec::generic}
+In actor models, we distinguish three entities and we make them explicit: actors, buffers, and the network which we call it the abstract network. Our generic framework provides a set of template rules to define the semantic model of actor-based languages. We identify a set of variation points in the semantic rules that their adjustment leads to different semantic rule implementations. These variation point explicitly shows the various assumptions and policies that are considered in implementing the actor-based computation model. % based on Agha's actor model \cite{Agha90}. 
+To make our framework independent of any specific language syntax, we provide a system abstract syntax model $\mathcal{M}$ that describes a specified system at a higher level of abstraction. Our abstract syntax model is defined as generic as possible to comply with most actor-based languages.
+
+%Our generic framework defines the semantic model of a system abstract system model based on labeled transition systems (LTSs). 
+Given a system abstract syntax model $\mathcal{M}$, we present its formal semantics as an LTS $\langle S,\rightarrow,s_0 \rangle$ where $S\subseteq \gstate$ %\subseteq \envT\times (\ID\rightarrow\local)\times {\it NetLocal}$ 
+is the set of global states, also called system states. Global states are defined based on the local states of the actors and abstract network entity. To define the states of the abstract network entity, actors, and system, we consider an environment which is a mapping from variables to their values, called a valuation function. Assume $\Var$ is the set of variables and $\Value$ is the set of possible values that a variable is assigned. We define the set of valuation functions as  $\envT=\Var \rightarrow \Value$. Let $\domain(e)$ denote the domain variables of the environment while $e[\mathfrak{x}\mapsto\mathfrak{y}]$ denote updating the environment $e$ by mapping $\mathfrak{x}$ to $\mathfrak{y}$:\[
+\begin{array}{l}
+\forall a\in\domain(e)\cdot(a\neq\mathfrak{x}\Rightarrow e[\mathfrak{x}\mapsto\mathfrak{y}](a)=e(a) \wedge a=\mathfrak{x}\Rightarrow e[\mathfrak{x}\mapsto\mathfrak{y}](a)=\mathfrak{y}).
+\end{array}
+\]We use $e_1\cup e_2$ to aggregate the valuations $e_1$ and $e_2$, where $\domain(e_1\cup e_2)=\domain(e_1)\cup\domain(e_2)$, and $e_1\setminus e_2$ to excludes valuations of $e_2$ from $e_1$, where $\domain(e_1\setminus e_2)=\domain(e_1)\setminus\domain(e_2)$:\[
+\begin{array}{l} 
+\forall a\in\domain(e_1 \cup e_2)\cdot(a\in \domain(e_2)\Rightarrow e_1\cup e_2(a) = e_2(a) \,\wedge \\ \hspace*{1cm} a\in \domain(e_1)\setminus\domain(e_2)\Rightarrow e_1\cup e_2(a) = e_1(a))\vspace*{1mm}\\
+\forall a\in\domain(e_1 \setminus e_2)\cdot( e_1\setminus e_2(a) = e_1(a)) 
+\end{array}
+\]We use $\Upsilon$ to show a valuation function that $\domain(\Upsilon)=\emptyset$.
+
+The transition relation $\rightarrow \,\subseteq \gstate\times \Act \times \gstate$ expresses how the global states of the system evolve. We define the semantic rules of the system based on the behavior of the abstract network  %$\noverto{}\subseteq {\it NetLocal}\times\Act \times {\it NetLocal}$ 
+and actors. %$\aoverto{}\subseteq \local\times \Act \times \local$. 
+We express the behavior of actors and abstract network by providing a template rule for their interface functions, i.e., $\receive$ and $\take$ of actors, and $\receive$ and $\transfer$ of abstract network entity. %a set of rules which show how their local states change. 
+Both actor and abstract network rely on buffers, so we should also define the behavior of buffers upon calling their interface functions, i.e., $\put$ and $\select$. %We provide a template rule for each interface function of actors, i.e., $\receive$ and $\take$ and abstract network entity, i.e., $\receive$ and $\transfer$. %In addition to the rules for the interface functions, we define rules for the abstract network, actors, and system to specify how they internally progress. The meta-rules of the system subsume rules for the interactions among of its constituent entities.
+
+
+%As the behavior of the abstract network and actors rely on buffer, we also propose the meta-rules for defining the behavior of buffer % $\boverto{} \subseteq \buffer\times \Act \times \buffer$ 
+%upon calling their interface functions, i.e., $\put$ and $\select$. 
+%The operational rules that derive the operational behavior of the system use the semantic rules of abstract network entity and actors. 
+%The meta-rules of actors use the rules of buffer and statements to define the behavior of the actors standalone. We define the meta-rules for the interface functions of actors, i.e., $\receive$ and $\take$. The meta-rules of the abstract network define the behavior of network upon calling its interface functions, i.e., $\receive$ and $\transfer$. In addition to the rules for the interface functions, we define rules for the abstract network, actors, and system to specify how they internally progress. The meta-rules of the system subsume rules for the interactions among of its constituent entities.
+
+
+\subsection{Abstract Syntax Model}\label{sec::AbstractSyntaxModel}
+%To make our semantic model independent of any specific language syntax, we provide an abstract syntax model that describes specified models at a higher level of abstraction. We define this model with regard to Agha's actor model \cite{Agha90}.
+
+Let $\ID$ be the set of actor identifiers, ranged over by $x$ and $y$, and $\Msg$ a set of messages communicated among the actors, ranged over by $m$. As the structure of message elements differs in each language, we do not specifies it. The structure should be defined for each language when the generic rules are instantiated. We assume that each message has a name and can be accessed by the dot notation $m.\name$. We represent the set of message names by $\MName$. Actors handle messages based on the name of messages. Let $\Stmt$ denote the set of statements defined by the language.%. The elements of this set are defined by the language. %Each message is a pair of content and appended information, i.e,  $\Msg=\Content\times \InfoT$; the content is a triple of a sender identifier, method name, receiver identifier, i.e., $\ID\times \MName\times\ID$. The set $\MName$ is the set of method names that an actor can handle, ranged over by $\mathfrak{m}$. This set is defined by the given actor model. The type $\InfoT$ abstracts the additional information that are appended to the messages in different system settings; in the timed setting, it may contain the arrival time of messages and the message deadline or the priority of the message.  %\FG{In the basic framework, this type is empty.} 
+
+\begin{defn}[Actor Abstract Syntax Model]\label{Def::absActor}
+An abstract syntax model of an actor is defined by the vector $\langle id, V,\msgHandlr\rangle $ where $id\in \ID$ is the actor identifier, $v\subseteq \Var$ is the set of local variables, and $\msgHandlr : \MName \rightarrow \Stmt^*$ define the set of statement an actor should execute based on the message name%, and $\aqu\subseteq \ID$ is the set of acquaintances that an actor can communicate with.
+\end{defn}
+In the classic actor model of Agha, each actor is also defined by its acquaintances, the set of actors that it can communicate with. \fixme{As this set may be dynamic in some languages \cite{mellati}, we remove it from the syntax and model it by a variable of actor environment.} 
+%\fixme{aqu should be removed : in the semantics it has a meaning ; it was in the first actor models but dynamic}  
+
+An actor-based system is composed of a set of actors and an abstract network. We define the abstract syntax model of the system: 
+
+\begin{defn}[System Abstract Syntax Model]\label{Def::absSystem}
+An abstract syntax model of an actor-based system $\mathcal{M}$ is defined by the pair $\langle \ID, R\rangle $ where $R$ is a set of actor abstract syntax models with identifiers from $\ID$. %and $N$ is the abstract model of the network entity.
+\end{defn}
+
+%\fixme{what is the abstract model of the network, maybe we should define it with respect to LF?}
+
+
+%------------------
+\subsection{Meta-Rules of Buffers}
+Buffer provides two interface functions $\select$ and $\put$ to collaborate with other entities. The function $\select$ includes the policy by which an item is selected from the buffer while the function $\put$ includes the policy by which an item can be inserted into the buffer. %specifies the behavior of the buffer when an item is inserted into the buffer. 
+
+The semantics of these interface functions depends on the inner structure of the buffer. Assume the data type $\buffer$ defines the inner structure buffers, ranged over by $b$. The meta-rules at this level define the meaning of interface function by the relation $\boverto{} \,\subseteq \buffer\times \Act \times \buffer$. The given rules have assumptions that may vary for each language and should be defined accordingly. 
+
+Our framework considers a rule for each interface function: 
+\[\begin{array}{cc}
+\inferrule*[left = (Put)]{?{\it putPolicy}(b,m)}{b\boverto{m?}?\insert(b,m)}~~~~ &
+~~~~\inferrule*[left = (Select)]{?{\it selectPolicy}(b,m)}{b\boverto{m!}?\remove(b,m)}
+\end{array}
+\] The goal of the assumption $?{\it putPolicy}(b,m)$ is to indicate when the message $m$ can be inserted into the buffer. By specifying this assumption, we determine the policy for handling overflow, or stale or duplicate messages. The goal of the assumption $?{\it selectPolicy}(b,m)$ is to express the conditions for removing an item from the buffer. By specifying this assumption, we explicitly identify the policy for selecting the message $m$ from the buffer. This policy may consider a priority or the timestamp of messages. The update of buffer $b$ upon inserting and removing an item depends on the structure of buffer. So the functions $?\insert(b,m)$ and $?\remove(b,m)$ should be defined on the data type $\buffer$.
+
+%--------------------
+\subsection{Meta-Rules of Actor}
+We define the semantic of actors by the relation $\aoverto{}\,\subseteq \local\times \Act \times \local$ where $\local$ is the set of local states of actors. The local states of an actor are defined by the value of its variables, buffer content, and program counter. We represent a local state by the triple $(e,b,\sigma)$ where $e\in\envT_{\it Actor}$ is a valuation function, $b\in\buffer_{\it Actor}$ is the local buffer of the actor, and $\sigma\in \Stmt^*$ is the sequence of statements. It shows the program counter of an actor by expressing the remaining statements (from the program counter) of a message handler that should be executed. An empty sequence, denoted by $\epsilon$, shows that the actor is not busy by executing a message handler. The set of actor local states is defined as $\local = \envT_{\it Actor}\times\buffer_{\it Actor}\times 
+\Stmt^\ast$. 
+
+The rules of actors are defined in two levels: statement and actor level. The latter specifies the semantics of the actor function interfaces, namely $\receive$ and $\take$, and how the actor internally evolves. The network calls the interface function $\receive$ to deliver a message to the actor.  The interface function $\take$ aims at processing a message from the buffer. This interface is invoked by the thread of each actor and includes the actor-level policy for choosing a message from the actor buffer. 
+
+We consider four actor-level meta-rules; two rules for the interface functions and two for internal progress of the actor:  
+\begin{itemize}
+    \item The rule \textsc{Receive} specifies the semantics of the interface function $\receive$. This rule explains that an actor can always receive a message as long as its buffer accepts an item.
+\[
+\inferrule*[left = (Receive)]{b\boverto{m?}b'}{(e,b,\sigma)\aoverto{m?}(e,b',\sigma)}
+\] 
+    \item The rule \textsc{Take} defines the semantics of the interface function $\take$, and shows that a message is selected from the buffer when the actor is not busy with handling another message. The actor processes the selected message by executing the statements of its message handler, i.e., $\msgHandlr(m.\name)$. 
+\[
+\inferrule*[left = (Take)]{b\boverto{m!}b'%\\?{\it takePolicy}(e,b)
+}{(e,b,\epsilon)\aoverto{m}(e,b',\msgHandlr(m.\name))}
+\]%The rule has an assumption, denoted by $?{\it takePolicy}(e,b)$, for defining the extra actor-level policy needed for selecting a message. {\color{red}For instance, an assumption may enforce a pattern on the message to be processed.} We can implement the selection policy either at the buffer-level (by specifying $?{\it takePolicy}$ assumption for the rule \textsc{Select}) or the actor-level. The actor-level policy may adapt the selection based on the state of the actor. \fixme{Validate this and add example}
+%in cases that each actor has a single thread of execution and its thread can be suspended, this assumption may express that the actor is ready to take a message if it is not suspended. 
+
+\item Actors internally progress due to execution of their message handler's statements as explained by the rule \textsc{Internal}. By executing statements, the values of variables may update. As explained by the rule, executing the statements has no effect on the buffer. % evolves the   or updating the local time of the actor.
+%\fixme{notSuspended should be removed}
+\[
+\inferrule*[left = (Internal)]{e,\sigma\stoverto{\tau}e',\sigma'}%\\?{\it notSuspended}(e)}
+{(e,b,\sigma)\aoverto{\tau}(e',b,\sigma')}%:{\it stProgress}
+%\inferrule*[left = (Internal)]{?{\it intCondition}(e,\sigma)}{(e,b,\sigma)\aoverto{\alpha}(?e',b,?\sigma')}%:{\it internal}
+\]%where $\alpha=\{m!,\tau\}$. 
+%The rule has a hole, denoted by $?{\it notSuspended}(e)$, for defining the extra conditions needed for executing its statements. 
+%For example an actor can have internal progress if it has some statement to execute and it is not suspended. 
+%This assumption is required in settings that the execution of actor can be temporarily suspended. We remark that internal progress of an actor has no effect on the buffer of the actor. %This rule also has two other holds $?e'$ and $?\sigma'$ which should be defined with regard to the type of the actor internal progress.
+
+%\fixme{Make sure that this "notsuspended" is the case for all cases ...}
+
+\item In actor-based languages with the concept of global time, the global time evolves in agreement with actors. The rule \textsc{EnvSybc} makes the progress of times explicit for such languages. This rule synchronizes with the rule at the system level advancing the global time.
+\[
+\inferrule*[left = (EnvSync)]{?{\it synConditon}(e,b,t)}{(e,b,\sigma)\aoverto{t}(e,b,\sigma)}
+\]The rule has an assumption, denoted by $?{\it synConditon}(e,b,t)$, for identifying conditions to indicate when time with  the amount of $t\in \int$ can progress from the point view of the actor. \fixme{example needed} %It also indicate that it agrees with  the amount of $t\in \int$ to be advanced by the global environment.
+%\fixme{Only when we have global time concept, then ...}
+\end{itemize}
+
+
+The statement-level rules should be provided by the user with regard to the set of statements. The meta-rule for each statement $s\in\Stmt$ is defined as:
+\[
+\inferrule*{?{\it stCondition(e,s)}}{(e,s)\stoverto{\tau}(?{\it UpdEnv}(e,s),?{\it Continue}(e,s))}
+\]where the assumption $?{\it stCondition(e,s)}$ expresses conditions on the environment $e$ and the structure of $s$. It should also define how the environment is updated and how the execution continues by specifying the two effect functions $?{\it UpdEnv}(e,s)$ and $?{\it Continue}(e,s)$. 
+%\[
+%\Rule{?{\it stCondition(e,s)}}{(e,s)\overto{\tau}(e',\top)}
+%\]where the assumption $?{\it stCondition(e)}$ may express condition on the environment $e$. This rule explains when a single statement is successfully executed, denoted by $\top$. For compound statements $s(\sigma_1,\ldots,\sigma_m)\in\Stmt$, where $\sigma_i\in\Stmt^*$, their meta-rules are defined as 
+%\[
+%\Rule{?{\it stCondition(e,\sigma_1,\ldots,\sigma_m)}}{(e,s(\sigma_1,\ldots,\sigma_m))\overto{\tau}(e',\sigma')}
+%\] 
+%-----------------------
+\subsection{Meta-Rules of Abstract Network}
+We define the semantics of the abstract network entity by the relation $\noverto{}\,\subseteq {\it NetLocal}\times\Act \times {\it NetLocal}$ where ${\it NetLocal}$ is the set of network entity local states. We represent the local state of the abstract network entity by a pair of $(e,b)$ where $e\in\envT_{\it Net}$ is the valuation of network local variables and $b\in\buffer_{\it Net}$ is its local buffer.  The set of local states of the network is defined as ${\it NetLocal}=\envT_{\it Net}\times \buffer_{\it Net}$.
+
+The abstract network entity provides two interface functions $\receive$ and $\transfer$. An actor calls the interface function $\receive$ to deliver its message for transmission. The interface function $\transfer$ is called to transfer the buffer messages. (If we consider the abstract network entity as an active entity, the thread of network calls $\transfer$.) The network-level meta-rules define the semantics of the network function interfaces and how it internally progresses:
+\begin{itemize}
+    \item The rule \textsc{Receive} specifies the semantics of interface function $\receive$. This rule explains that the network can always receive a message as long as its buffer accepts an item.
+\[
+\inferrule*[left = (Receive)]{b\boverto{m?}b'}{(e,b)\noverto{m?}(e,b')}
+\] 
+    \item The rule \textsc{Transfer} defines the semantics of the interface function $\transfer$. 
+    \[
+\inferrule*[left = (Transfer)]{b\boverto{m!}b'\\ ?{\it transferPolicy(e,b,m)}}{(e,b)\noverto{m!}(e,b')}%:{\transfer}
+\]The rule has an assumption $?{\it transferPolicy(e,b,m)}$.  By specifying this assumption, we explicitly identify the policy on transmitting messages. For instance, this policy may enforce the order of messages should be preserved by their delivery. In timed languages, the policy may transfer messages based on their timestamps. For messages with the same timestamp, the policy may consider a priority among messages or transfer them non-deterministically. \fixme{By this assumption, we can also indicate conditions on when the network is ready to transfer a message. validate?}     
+%\fixme{From actor a to actor b the order of messages is preserved. when a message should }
+
+\item In languages with the concept of global time, the global time evolves in agreement with the abstract network entity. The rule \textsc{EnvSybc} synchronizes with the rule at the system level advancing the global time.
+\[
+\inferrule*[left = (EnvSync)]{?{\it synCondition}(e,b,t)}{(e,b,\sigma)\noverto{t}(e,b,\sigma)}%:{\it envSync}
+\]The rule has an assumption, denoted by $?{\it synConditon}(e,b,t)$, for identifying conditions to indicate when time with  the amount of $t\in \int$ can progress from the point view of  the abstract network entity.  %It also indicate that it agrees with  the amount of $t\in \int$ to be advanced by the global environment.
+\end{itemize}
+%-----------------------------------
+
+\subsection{Meta-Rules of the System}
+%\FG{System is composition rule!}
+We define the semantics of the system by the relation $\overto{}\,\subseteq \gstate\times\Act \gstate $ where $\gstate$ is the set of global states. The global states of the system are defined by the values of global variables, the local states of actors, and the local state of the abstract network entity. We represent a global state by the triple $(e,s,n)$ where $e\in\envT_{\it Sys}$ is the valuation function for the global variables that are shared among the actors, $s: \ID\rightarrow \local$ is a mapping from actor identifiers to their local state, and $n\in {\it NetLocal}$ is the network local state. %The environment $e$ defines a set  Actors cannot change these variables and can only read from them.
+
+The rules at this level define the compositional semantics of the actor-based systems. The rules define the semantic of collaboration among the system constituents, i.e., actors and abstract network or the evolution of the system in terms of its constituent evolution.  
+
+\begin{itemize}
+    \item The global state evolves when an actor internally progresses, as explained by the following rule.
+    \[
+\inferrule*[left = (actorProgress)]{s(x)==(e^\ast,b,\sigma) \\ (e\cup e^\ast, b, \sigma)\aoverto{\tau}(e',b',\sigma')}{(e,s,n)\overto{\tau}(e,s[x\mapsto(e'\setminus e,b',\sigma')],n)}%:{\it actorProgress}
+\] 
+
+\item The global state evolves when an actor delivers a message for transmission to the abstract network entity. The assumption $(e\cup e^\ast, b, \sigma)\aoverto{m!}(e',b',\sigma')$ indicates that the actor with the identifier $x$ has the message $m$ for delivery (by executing a statement generating a message). In this assumption, the actor is executed under its environment extended with the global environment. The assumption $(e\cup e^{\ast\ast},b^{\ast\ast})\noverto{m?}(e'',b'')$ expresses that the abstract network entity is ready to accept the message $m$. This assumption is the conclusion of \textsc{Receive} rule of the network-level rule. 
+    \[
+\inferrule*[left = (comm 1)]{s(x)==(e^\ast,b,\sigma)\\(e\cup e^\ast, b, \sigma)\aoverto{m!}(e',b',\sigma')\\n==(e^{\ast\ast},b^{\ast\ast})\\(e\cup e^{\ast\ast},b^{\ast\ast})\noverto{m?}(e'',b'')}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e'\setminus e,b',\sigma')],(e''\setminus e,b''))}%:{\it comm_1}
+\] 
+
+\item This rules shows the communication of the abstract network entity with an actor. When the network has a message ready to deliver, indicated by the assumption $(e\cup e^{\ast\ast},b^{\ast\ast})\noverto{m!}(e'',b'')$ and an actor is ready to receive, expressed by  the assumption $(e\cup e^\ast, b, \sigma)\aoverto{m?}(e',b',\sigma')$, the message is transferred. 
+    \[
+\inferrule*[left = (comm 2)]{?{\it PriorityPolicy}(e,s,n)\\n==(e^{\ast\ast},b^{\ast\ast})\\(e\cup e^{\ast\ast},b^{\ast\ast})\noverto{m!}(e'',b'')\\m.rcv==y \\ s(y)==(e^\ast,b,\sigma)\\(e\cup e^\ast, b, \sigma)\aoverto{m?}(e',b',\sigma')}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e'\setminus e,b',\sigma')],(e''\setminus e,b''))}%:{\it comm_2}
+\]This rule has an assumption $?{\it PriorityPolicy}(e,s,n)$. By specifying this assumption, we can define the policy that considers a priority among the entities. For instance, we can define the policies of CAN bus for the abstract network entity. As CAN bus transfers messages with the same timestamp based on their the priority defined on the message types, the network should not start transferring messages as long as actors have messages to deliver the network. By giving a lower priority to the network in comparison with actors (and defining $?{\it transferPolicy$ of rule \textsc{Transfer} at the network-level), the network entity behaves as CAN bus.  
+
+\item In languages with the concept of global time, this rule explicitly explains when the global time advances. This rule synchronizes with the rule \textsc{envSync} of entities of systems, i.e., actors and the abstract network. %The assumption $?{\it envUpd}(e,s,n,t)$ shows the conditions on .
+\[
+\inferrule*[left = (envProgress)]{?{\it envUpd}(e,s,n,t)}{(e,s,n)\overto{t}(e[\now \mapsto t],s,n)}%:{\it envProgress}
+\]where $t\in\int$ is the new value of the global time. The assumption $?{\it envUpd}(e,s,n,t)$ indicates the conditions or advancing the global time to $t\in \int$.
+\end{itemize}
+
+We have summarized the meta-rules for each level with their parametric assumptions in Table \ref{Tab::semanticPar}. To define the semantic rules of a language, we only instantiate those rules by specifying their parametric assumptions. The rules with no parametric assumption are inherited from the generic framework with no modification. 
+
+
+
+\begin{table}[]
+	\centering
+	\caption{The parameters of rules at each level that should be defined}\label{Tab::semanticPar}
+	\begin{tabular}{|c|c|l|l|l|}
+		\hline
+		\multirow{2}{*}{Level}  & \multirow{2}{*}{Relation} & \multicolumn{3}{l|}{Rule}                     \\ \cline{3-5} 
+		&                           & Name                    & Parameter        & Signature \\ \hline
+		\multirow{4}{*}{Buffer} & \multirow{4}{*}{$\boverto{\;\;\;}$}         & \multirow{2}{*}{\textsc{put}}    & $?{\it putPolicy}$    &  $\buffer\times \Msg\rightarrow \bool$    \\ \cline{4-5} 
+		&                           &                         & $?\insert$       &   $\buffer\times \Msg\rightarrow\buffer$   \\ \cline{3-5} 
+		&                           & \multirow{2}{*}{\textsc{select}} & $?{\it selectPolicy}$ &    $\buffer\times \Msg\rightarrow \bool$  \\ \cline{4-5} 
+		&                           &                         & $?\remove$       &  $\buffer\times \Msg\rightarrow\buffer$    \\ \hline
+		%------------------------------------------------------------------
+		\multirow{7}{*}{Actor}  & \multirow{7}{*}{$\aoverto{}$}         & \textsc{Receive}                 &     -         &  -    \\ \cline{3-5} 
+		&                           & \textsc{Take}                    &    -          & $\envT\times \buffer\rightarrow \bool$     \\ \cline{3-5} 
+		&                           & \textsc{Internal}                &    -         &  -   \\ \cline{3-5} 
+		&                           & \textsc{EnvSync}                 &    $?{\it synCondition}$         & $\envT\times \buffer\times \int\rightarrow \bool$    \\ \cline{3-5} 
+		&                           & \multirow{3}{*}{$s\in\Stmt$}   & $?{\it stCondition}$ &  $\envT \times \Stmt\rightarrow \bool$    \\ \cline{4-5} 
+		&                           &                         & $?{\it updEnv}$       &  $\envT \times \Stmt\rightarrow \envT$    \\ \cline{4-5} 
+		&                           &                         & $?{\it Continue}$     &  $\envT \times \Stmt\rightarrow \Stmt$    \\ \hline
+		%------------------------------------------------------------------
+		\multirow{3}{*}{Network} & \multirow{3}{*}{$\noverto{}$}         & \textsc{Receive}                 &       -       &    -  \\ \cline{3-5} 
+		&                           & \textsc{Transfer}                &      $?{\it transferPolicy}$        &  $\envT\times \buffer\times \Msg\rightarrow \bool$    \\ \cline{3-5} 
+		&                           & \textsc{EnvSync}                 &       $?{\it synConditon}$         &   $\envT\times \buffer\times \int\rightarrow \bool$   \\ \hline
+		%---------------------------------------------------------------------------
+		\multirow{4}{*}{System} & \multirow{4}{*}{$\overto{}$}         & \textsc{ActorProgress}           &      -        &    -  \\ \cline{3-5} 
+		&                           & \textsc{Comm 1}                  &      -        &   -   \\ \cline{3-5} 
+		&                           & \textsc{Comm 2}                  &     $?{\it PriorityPolicy}$         &   $(\ID\rightarrow \local)\rightarrow \bool$   \\ \cline{3-5} 
+		&                           & \textsc{EnvProgress}             &     $?{\it envUpd}$        &   $\gstate\times \int\rightarrow \bool $   \\ \hline
+	\end{tabular}
+	
+\end{table}

@@ -1,0 +1,19 @@
+class ABSAbstractNetwork : AbstractNetwork{
+ 
+    Msg transfer() {
+        Set<Msg> ready2Deliver = pick(container);
+        Msg m = nondeterministicPolicy(ready2Deliver);
+        return m;
+    }
+    
+    Set<Msg> pick() {
+        return container.items();
+    }
+    
+    Msg nondeterministicPolicy(Set<Msg> msgs)
+    {
+        // it chooses non-deterministically a message from the given msgs
+
+    }
+    
+}

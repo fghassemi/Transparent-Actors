@@ -1,0 +1,35 @@
+interface Buffer {
+    MultiSet<Msg> buffer; 
+
+    receive(m: Msg) {
+        //If queue is not full
+        buffer.receive(Msg);
+    }
+    Msg take ()
+    {
+        Set<Msg> readyMsgs = pick();
+        // the policy to choose a message from the ready ones
+    }
+    Set<Msg> pick() {
+        // find the message that are ready to be processed
+    }
+
+}
+
+class Actor : Thread {
+    Buffer buffer;
+    
+    handle()
+    {
+      // taking a message from the buffer
+        m= buffer.take() ;
+        buffer.remove(m);
+        execute(m);
+    }
+
+     run() {
+        while (!buffer.isEmpty()) {
+            handle();
+        }
+    }   
+}

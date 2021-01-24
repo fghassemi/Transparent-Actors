@@ -1,0 +1,34 @@
+\subsection{Discussion}
+We have summarized how policies are restricted as more aspect added to the Rebeca family in Table \ref{tab:Policy}. 
+
+Decision points: 
+Actor puts message in the Buffer.
+
+putPolicy: Overflow, overwrite
+
+selectPolicy: FIFO, EDF, SJF??, pattern matching with no need to a state variable, nonDet
+
+takePolicy: pattern matching using a state variable
+
+transferPolicy: after(t), wiring actors (LF) configuration
+
+priorityPolicy: composition policies, like all messages sent then take
+
+
+
+
+\begin{table}[]
+\takcentering
+\caption{The policy adjustment for different settings: \xmark denotes a $\true$ assumption while \cmark denotes a more restrictive policy.}
+\label{tab:Policy}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+Level                   & Assumption        & Core  & Timed & Hybrid \\ \hline
+\multirow{2}{*}{Buffer} & ${\it putPolicy}$    & \xmark     & \xmark     & \xmark      \\ \cline{2-5} 
+                        & ${\it selectPolicy}$  & \cmark & \cmark & \cmark  \\ \hline
+Actor                   & ${\it takePolicy}$    & \xmark     & \xmark     & \xmark      \\ \hline
+Network                 & ${\it transferPolicy}$  & \xmark     & \cmark & \cmark  \\ \hline
+System (Composition rules (Global rules))                  & ${\it priorityPolicy}$  & \xmark     &  \xmark     & \cmark  \\ \hline
+\end{tabular}
+
+\end{table}

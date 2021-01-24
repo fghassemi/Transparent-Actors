@@ -1,0 +1,19 @@
+class ABSBuffer : Buffer {
+
+    Msg take ()
+    {
+        Set<Msg> readyMsgs = pick();
+        Msg m = nondeterministicPolicy(Set<Msg> msgs);
+        return m;
+    }
+    Set<Msg> pick() {
+        // find the message that are ready to be processed
+    }
+    
+     Msg nondeterministicPolicy(Set<Msg> msgs)
+    {
+        // it chooses non-deterministically a message from the given msgs
+
+    }
+
+}

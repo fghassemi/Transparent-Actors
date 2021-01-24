@@ -1,0 +1,37 @@
+class TimedRebecaAbstractNetwork : AbstractNetwork{
+    
+   
+ 
+    Msg transfer() {
+        Set<Msg> ready2Deliver = pick(container);
+        Msg m = nondeterministicPolicy(ready2Deliver);
+        return m;
+    }
+    
+    Set<Msg> pick() {
+        //pick those with the minimal time tag
+        
+        
+        Iteration iterate = container.iterate();
+        Msg m = iterate.next()
+        Set<Msg> result ; 
+        int mintag = infity;
+        
+        while (!iterate.empty()) {
+            Msg m = iterate.next();
+            if (m.tag()<mintag) {
+                result = new Set<Msg>(); 
+                mintag = m.tag();
+             }else if (m.tag==mintag) result.add(m);
+        }
+        
+        return result;
+    }
+    
+    Msg nondeterministicPolicy(Set<Msg> msgs)
+    {
+        // it chooses non-deterministically a message from the given msgs
+
+    }
+    
+}

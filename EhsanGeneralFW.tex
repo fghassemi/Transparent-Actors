@@ -1,0 +1,72 @@
+\section{Transparent Semantic Model}\label{sec::generic}
+The system states are in form of $(s, ns, e)$ where $s$ is the states of actors, $ns$ is the state of the network and $e$ is the set of environment variables.
+\subsection{Core Rebeca}
+Considering the system state $(s, ns, e)$, we assumed that $e$ is empty in Core Rebeca. Also, we assumed that $ns$ is a function from actor ids to their corresponding queue of messages.
+\subsubsection{Actor}
+The actor state is a tuple of map of environment variables names to their values, queue content, map of variable names to their values, and the sequence of statements which have to be executed.
+
+\noindent
+$\inferrule*[left = (Actor Buffer Take Policy)]{b=\langle m | \delta\rangle}{b \overset{m?}{\longrightarrow}\langle\delta\rangle}$\\
+$\inferrule*[left = (Actor Buffer Put Policy)]{b=\langle\delta\rangle}{b \overset{ m!}{\longrightarrow}\langle \delta|m\rangle}$\\
+$\inferrule*[left = (Actor Take)]{s(x)=(e, b, v, \epsilon) \\ b \overset{m?}{\longrightarrow} b'}{s \overset{x.m}{\longrightarrow}s[x \mapsto (e, b', v, body(m))]}$\\
+$\inferrule*[left = (Actor Receive)]{s(x)=(e, b, v, \langle \sigma \rangle) \\ b \overset{m!}{\longrightarrow} b'}{s \overset{x.m?}{\longrightarrow}s[x \mapsto (e, b', v, \langle \sigma \rangle)]}$\\
+$\inferrule*[left = (Actor Send)]{s(x)=(e, b, v, \langle send(m)| \sigma \rangle)}{s \overset{x.m!}{\longrightarrow}s[x \mapsto (e, b, v, \langle \sigma\rangle)]}$\\
+$\inferrule*[left = (Actor Assignment Statement)]{\cdots}{\cdots}$\\
+
+
+\subsubsection{Network}
+A network state is a tuple of map of environment variables names to their values and a function from actor ids to the sequence of messages which have to be delivered to them.
+
+\noindent
+$\inferrule*[left = (Network Receive)]{ns=(e, nqs) \wedge nqs(x)=\langle q \rangle}{ns \overset{x.m?}{\longrightarrow}(e, nqs[x \mapsto \langle q | m \rangle])}$\\
+$\inferrule*[left = (Network Transfer \FG{Policy?})]{ns=(e, nqs) \wedge nqs(x)=\langle m | q \rangle}{ns \overset{x.m!}{\longrightarrow}(e, nqs[x \mapsto \langle q\rangle]}$\\
+
+
+\subsubsection{System}
+$\inferrule*[left = (Sending)]{s \overset{x.m!}{\longrightarrow} s' \\ ns \overset{x.m?}{\longrightarrow} ns'}{(e, s, ns) \overset{x.m\uparrow}{\longrightarrow}(e, s', ns')}$\\
+$\inferrule*[left = (Transferring)]{s \overset{x.m?}{\longrightarrow} s' \\ ns \overset{x.m!}{\longrightarrow} ns'}{(e, s, ns) \overset{x.m \downarrow}{\longrightarrow}(e, s', ns')}$\\
+$\inferrule*[left = (Internal Transition)]{ s \overset{\Gamma}{\longrightarrow} s'}{(e, s, ns) \overset{\Gamma}{\longrightarrow}(e, s', ns)}$
+
+Note that $\Gamma$ is one of the labels of actors statements execution, including taking a message.
+
+
+\subsection{Timed Rebeca}
+For a given system state $(s, ns, e)$, we assumed that the set of environment variables contains the \emph{now} variable which shows the current time of the actor.
+\subsubsection{Actor}
+Here, we assumed that each actor has a local variable \emph{now} which shows the current time of the actor. It also contains \emph{res} which shows the time that actor can continue its execution. Both of these variables are initialized to zero. Note that the message container of actors is a multiset (bag) in Timed Rebeca.
+
+\noindent
+$\inferrule*[left = (Actor Buffer Take Policy)]{m=(msg, ar, dl) \in b \wedge \forall m'=(msg', ar', dl') \in b \bullet ar \leq ar'}{b \overset{m!}{\longrightarrow}b-m}$\\
+$\inferrule*[left = (Actor Buffer Put Policy)]{}{b \overset{m?}{\longrightarrow}b \cup \{m\}}$\\
+$\inferrule*[left = (Actor Delay)]{s(x)=(e, b, v, \langle delay(t)| \sigma \rangle) \\ e(now)=t'}{s \overset{delay(t)}{\longrightarrow}s[x \mapsto (e, b, v[res \mapsto t + t'], \langle \sigma \rangle)]}$
+
+For progress of time, there are two different cases. The first one works for an actor which has been executed a delay statement and is waiting for passing the time to execute the next statement.
+\newline
+$\inferrule*[left = (Actor Time Progress)]{s(x)=(e, b, v, \langle \sigma \rangle) \\ e(now)=t \\ v(res)=t' \\ t < t' \\ t'' \in (t, t']}{s \overset{t'',x}{\longrightarrow}s[x \mapsto (e[now \mapsto t''], b, v, \langle \sigma \rangle)]}$
+
+The second one works for an actor which is free and wants to take a message and execute it but its current time is less than the arrival time of its received messages.
+\newline
+$\inferrule*[left = (Actor Time Progress)]{s(x)=(e, b, v, \epsilon) \\ e(now)=t \\ \exists\,(msg, ar, dl) \in b \bullet \forall\,(msg', ar', dl') \in b \bullet ar \leq ar' \\ t' \in (t, ar]} {s \overset{t',x}{\longrightarrow}s[x \mapsto (e[now \mapsto t'], b, v, \langle \sigma \rangle)]}$\\
+
+\subsubsection{Network}
+
+A network state is a pair of map from environment variable names to their values and a function from actor ids to the bag of messages which have to be delivered to them.
+
+\noindent
+$\inferrule*[left = (Network Receive)]{ns = (e, nbs) \\ nbs(x)=b}{ns \overset{x.m?}{\longrightarrow}(e, nbs[x \mapsto b \cup \{m\}])}$\\
+$\inferrule*[left = (Network Transfer)]{ns=(e, nbs) \\ nbs(x)=b \\ m=(msg, ar, dl) \in b \bullet t = ar\FG{t=e(now)}}{ns \overset{x.m!}{\longrightarrow}(e, nbs[x \mapsto b-\{m\}])}$\\
+$\inferrule*[left = (Network Time Progress)]{ns=(e, nbs) \\ \exists\,x \in \textit{AID} \wedge \exists (msg, ar, dl) \in nbs(x) \\ \forall\,x' \in \textit{AID} \wedge \forall (msg', ar', dl') \in nbs(x') \wedge ar \leq ar' \\ t' \in (e(now), ar]}{ns \overset{t'}{\longrightarrow}(e[now \mapsto t'], nbs)}$\\
+
+\subsubsection{System Alternative 1}
+Rules for \textit{sending}, \textit{transferring}, \textit{internal transitions} are the same as Core Rebeca. Here we define one more rule for having progress in time.
+
+$\inferrule*[left = (Time Progress)]{t \in \mathbb{N} \text{ is the biggest value that } \forall x \in \textit{AID} \bullet s \overset{t,x}{\longrightarrow} s' \\ ns \overset{t}{\longrightarrow} ns' }{(e, s, ns) \overset{t}{\longrightarrow}(e', s, ns)\FG{(e,s',ns'), \mbox{what is $e'=e+t$}}}$
+
+\subsubsection{System Alternative 2}
+Rules for \textit{sending}, \textit{transferring}, \textit{internal transitions} are the same as Core Rebeca. Here we define one more rule for having progress in time.
+
+$\inferrule*[left = (Time Progress)]{t \in \mathbb{N} \text{ is the biggest value that } \forall x \in \textit{AID} \bullet  
+s(x)=(e, b, v, \Sigma) \\ e(now)=t \\ ((\Sigma \neq \epsilon \wedge (res)=t') \vee (\Sigma = \epsilon \wedge \exists\,(msg, t', dl) \in b \bullet \forall\,(msg', ar', dl') \in b \bullet t' \leq ar') \\ 
+ns=(e, nbs) \\ \exists\,x'' \in \textit{AID} \wedge \exists (msg'', t'', dl'') \in nbs(x'') \\ \forall\,x''' \in \textit{AID} \wedge \forall (msg''', ar''', dl''') \in nbs(x'') \wedge t'' \leq ar''' \\
+t < t'\wedge t < t'' \\ t''' \in (t, \min\{t', t''\}]}{
+(e, s, ns) \overset{t'  ''}{\longrightarrow}(e', s, ns)\FG{\mbox{what about the local e of actors}}}$

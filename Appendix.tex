@@ -1,0 +1,162 @@
+\appendix
+\section{Formal Specification of Message and Buffer Structures\label{sec::data}}
+We make use of equational abstract data types \cite{ADT}. Data is specified
+by equational specifications: one can declare data types (so-called sorts) and functions working upon these data types, and
+describe the meaning of these functions by equational axioms. 
+
+We use {mCRL2} \cite{Groote} notation to define data types: \emph{sort} declares sort names, \emph{cons} specifies constructor and \emph{map} non-constructor functions, \emph{var} declares variable names, and \emp{eqn} defines non-constructor functions by means of rewrite rules. We assume that the function ${\it if} : Bool \times D \times D$ is defined for all data sorts $D$, which returns the first $D$ parameter if the
+boolean parameter equals true, otherwise the second $D$ parameter is returned.
+The data sort $Bool$ is used in the conditional operator construct to change the behavior of a process in terms of data
+values. This data sort is defined by two constructors $\it true$ and $\it false$ . The conventional operators $\wedge$, $\vee$ and $\neg$ can be defined over it straightforwardly. The data sort $\int$ specifies the natural numbers by the constant $0$ and the unary function $\it succ$. We use $1$, $2$, $\ldots$ for $succ(0)$, $succ(succ(0))$, $\ldots$. The definition of functions $+$, $>$, $\ge$ and $==$ are straightforward.
+
+\subsection{Core Rebeca\label{sec::dataCore}}
+We define the structure of actor buffers as an unbounded FIFO queue of messages by the two constructors $\empt: \buffer_{\it Actor}$, denoting an empty buffer, and $\frown: \Msg \times \buffer_{\it Actor}  \rightarrow \buffer_{\it Actor}$, appending a message to the buffer. The definition of $\buffer_{\it Actor}$ and its functions is given in Figure \ref{fig:ActBufferClassic}.
+%The behavior of the mappings are formally defined as:\[
+%\begin{array}{l}
+%\insert(\empt,m) = m\frown \empt\\
+%\insert(m'\frown q,m) = m' \frown \insert (q,m) \\\\
+%\head(m\frown q) = m \\\\
+%\remove(\empt,m) = \empt\\ 
+%\remove(m' \frown q,m) = (m==m')\Rightarrow q\wedge (m\neq m')\Rightarrow m'\frown q\\\\
+%\size(\empt) = 0\\
+%\size(m\frown q) = \size(q)+1
+%\end{array}
+%\]
+
+\begin{figure}[h]
+	\centering
+	\lstinputlisting[language=ADT]{"./Code/ActBufferClassic.tex"}
+	\caption{Specification of actor buffer in Core Rebeca.}
+	\label{fig:ActBufferClassic}
+\end{figure}
+
+we define the structure of $\buffer_{\it Net}$ by a set of pairs of actor identifiers and their pending message queue by the two constructors $\empt: \buffer_{\it Net}$, denoting an empty set, and $\triangleright: \ID \times \buffer_{\it Actor} \times \buffer_{\it Net} \rightarrow \buffer_{\it Net}$ appending an actor identifier and its pending messages to the buffer. The definition of $\buffer_{\it Net}$ and its functions is given in Figure \ref{fig:NetBufferClassic}.
+
+%\[
+%\begin{array}{l}
+%\insert(\empt,m) = (m.\rcv,m\frown\empt)\triangleright \empt\\
+%\insert((id,q)\triangleright b,m) = (m.\rcv==id)\Rightarrow (id,\insert(q,m))\triangleright b \, \wedge \\ \hspace*{3.5cm}(m.\rcv\neq id)\Rightarrow ((id,q)\triangleright \insert(b,m)) \\\\
+%\remove(\empt,m) = \empt\\ 
+%\remove((id,q) \triangleright b,m) = (m.\rcv==id)\Rightarrow (id,\remove(q,m))\triangleright \, b\wedge\\
+%\hspace*{4cm}(m.\rcv\neq id)\Rightarrow (id,q)\triangleright \remove(b,m))\\\\
+%\end{array}
+%\]
+
+\begin{figure}[h]
+	\centering
+	\lstinputlisting[language=ADT]{"./Code/NetBufferClassic.tex"}
+	\caption{Specification of network buffer in Core Rebeca.}
+	\label{fig:netBufferClassic}
+\end{figure}
+
+
+\subsection{Timed Rebeca}
+In this setting the structure of actor and network buffers are identical and it is defined as an unbounded bag of messages. We define bag by the two constructors $\empt: \buffer$, denoting an empty bag, and $\diamond: \Msg \times \buffer\rightarrow \buffer$, adds a message to the buffer. 
+
+\end{itemize}The behavior of the mappings are formally defined as:\[
+\begin{array}{l}
+\insert(b,m) = m\diamond b\\\\
+\remove(\empt,m) = \empt \\
+\remove(m' \diamond b,m) = (m==m')\Rightarrow b\wedge (m\neq m')\Rightarrow m'\diamond\remove(b,m)\\\\
+\include(m,\empt) = \false\\
+\include(m,m'\diamond b) = (m==m')\Rightarrow \true\wedge (m\neq m')\Rightarrow \include(m,b)
+\end{array}
+\]
+
+\subsection{ABS}
+We define the structure of object buffers as a multiset of messages by the two constructors $\empt: \buffer_{\it Actor}$, denoting an empty buffer, and $\frown: \Msg \times \int \times \buffer_{\it Actor}  \rightarrow \buffer_{\it Actor}$, puts a message in the buffer. We define the following mappings on $\buffer_{\it Actor}$:
+\begin{itemize} 
+\item $\insert:\buffer_{\it Actor} \times \Msg\rightarrow \buffer_{\it Actor}$: given a buffer and message, this function inserts the message into the buffer;
+\item $contains:\buffer_{\it Actor} \times \Msg \rightarrow boolean$: specifies that if the multiset contains the given message;
+\item $\remove:\buffer_{\it Actor} \times \Msg \rightarrow \buffer_{\it Actor} $: it returns a multiset by removing one instance of the given $\Msg$ from the multiset;
+\item $\size:\buffer_{\it Actor} \rightarrow \int$: denotes the number of elements in the buffer;
+\item ${\it cnt}:buffer_{\it Actor} \times \Msg \rightarrow \int$: denotes the multiplicity of given message in the given multiset .
+\end{itemize}
+
+The behavior of the mappings are formally defined as:\[
+\begin{array}{l}
+\insert(\empt,m) = (m,1)\frown \empt\\
+\insert((m',n)\frown ms, m) = (m==m') \Rightarrow (m',n+1)\frown ms \wedge (m\neq m')\rightarrow (m',n)\frown \insert(ms,m) \\\\
+contains(ms, m) = (\nu(ms, m) > 0) \\\\
+\remove(\empt, m) = \empt\\ 
+\remove(m' \frown ms, m) = (m==m')\Rightarrow ms\wedge (m\neq m')\Rightarrow m'\frown q\\\\
+\size(\empt) = 0\\
+\size(m\frown ms) = \size(ms)+1
+\end{array}
+\]
+
+
+%--------------------------------------------------------
+\subsection{Hybrid Rebeca}
+Hybrid Rebeca extends Timed Rebeca with physical behaviors to support modeling of hybrid systems such as embedded or cyber-physical systems. Hybrid Rebeca has two types of classes, reactive and physical. Reactive classes are similar to reactive classes in the Timed Rebeca language where the computational behaviors are defined by message servers. Physical classes in addition to message servers, can also contain different modes, where the continuous behaviors are specified. A physical actor (which is instantiated from a physical class) must always have one active mode. This active mode defines the evolution of continuous variables over time in terms of ordinary differential equations (ODE). By changing the active mode of a physical actor, it is possible to change the continuous behavior of the actor.  The modes of physical classes are similar to the concept of locations in hybrid automata. Rebecs can communicate via wire with a zero delay or CAN bus with different delays. The CAN network transfers messages based on their arrivals and uses a priority policy for the messages that have arrived simultaneously. The delays and priorities are specified in a CAN block in terms of the sender and the message name.
+
+\begin{figure}[h]
+	\centering
+	\lstinputlisting[language=HRebeca, multicols=2]{"./Code/hybrid.tex"}
+	\caption{A model of a heater with a sensor specified in Hybrid Rebeca.}
+	\label{fig:sensor}
+\end{figure}
+
+\begin{example}
+We extend the given model of Figure \ref{fig:Controller} with a model of a heater with a sensor as shown in Figure \ref{fig:sensor}. The new main block connects a monitor to the heater. The heater has two modes $\it On$ and $\it Off$: in the $\it On$ mode, the temperature is increased with the rate of $1$. It sends a $\it check$ message to the monitor when the temperature is above $22$ before switching to the mode $\it Off$. Heater communicates via a CAN bus with the monitor while the monitor is connected by wire to the alarm. The specification of CAN network defines priorities and delays for messages in lines 45-53. 
+\end{example}
+
+Each physical rebec has a set of real variables with a set of modes. To specify the behavior of a physical class, two statements have been added: 
+\begin{itemize}
+    \item mode block ${\it mode}~ {\it name}~ {\it inv}({\it expr}){ode}~{\it guard}({\it expr}){stmt}$: a physical rebec can stay in mode as long as its invariant expressions holds, and the state variables of rebec updates according to the given $\it ode$. A solution of an $\it ode$ is called a flow. The statements $\it stmt$, called trigger of a mode, can be executed when the given guard expression holds.  
+    \item set mode statement $x.{\it setmode}(M)$ that sets the active mode of rebec $x$ to $M$.
+\end{itemize}
+%The active mode of an actor can be changed by using the set mode statement $x.{\it setmode}(M)$ that sets the active mode of rebec $x$ to $M$. 
+We extend the actor abstract syntax model given in Definition \ref{Def::absActor} with an extra item ${\it Mode}$ for specifying the mode of physical rebecs. 
+
+\begin{defn}[Extended Actor Abstract Syntax Model]\label{Def::absPhyActor}
+An abstract syntax model of a physical actor instance is defined by the vector $\langle id, V,\msgHandlr,\aqu, {\it Mode}\rangle $ where $id\in \ID$ is the actor identifier, $v\subseteq \Var$ is the set of local variables, $\msgHandlr : \MName \rightarrow \Stmt^*$ define the set of statement an actor should execute in terms of the message name, $\aqu\subseteq \ID$ is the set of acquaintances that an actor can communicate with, and $\Mode\subseteq \MoName\rightarrow \Expr\times \ODE \times \Expr \times \Stmt$ is its set of model.
+\end{defn}
+
+Each mode is specified in terms of four items called ${\it inv}$, ${\it flow}$, ${\it guard}$, and ${\it trigger}$. Given the name of a mode $\mathfrak{m}$, we assume we can access these for items by $\inv(\Mode(\mathfrak{m}))$, $\flow(\Mode(\mathfrak{m}))$, $\guard(\Mode(\mathfrak{m}))$, and $\trigger(\Mode(\mathfrak{m}))$, respectively. For a flow $\mathcal{F}$, We show its solution by the notation $f\in\mathcal{F}$, where $\frac{df}{dt}=\mathcal{F}$. 
+
+\subsubsection{Semantic Rules}
+The structure of messages and buffers in this setting are similar to the Timed setting. This setting almost has the same rules as the timed setting. In the following, we explain the new semantic rules and the ones that should be changed in comparison with the timed setting.  
+
+
+\begin{table}[]
+\centering
+\caption{The new and modified semantic rules of the Hybrid Rebeca.}
+\label{Tab::HybridRules}
+\begin{tabular}{|cc|}
+\hline
+%\multicolumn{2}{|c|}{$\inferrule*[left = (Select)]{\include(m,b)\\\forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)}{b\boverto{m!}\remove(b,m) }$}\\[1mm]
+%$\inferrule*[left = (put)]{}{b\boverto{m?}\insert(b,m) }$ & $\inferrule*[left = (Take)]{b\boverto{m!}b'}{(e,b,\epsilon)\aoverto{m?}(e,b',\body(m))}$\\[1mm]
+%$\inferrule*[left = (Act Receive)]{q\boverto{m?}q'}{(e,q,\sigma)\aoverto{m?}(e,q',\sigma)}$ & %$\inferrule*[left = (Internal)]{e,\sigma\aoverto{\tau}e',\sigma'}{(e,q,\sigma)\aoverto{\tau}(e',q,\sigma')}$ \\[1mm]
+%\multicolumn{2}{|c|}{$\inferrule*[left = (Act EnvSync 1)]{e(\now)<e(\rt)\\e(\now)<t\le e(\rt)}{(e,b,\sigma)\aoverto{t}(e,b,\sigma)}$}\\[2mm] 
+%\multicolumn{2}{|c|}{$\inferrule*[left = (Act EnvSync 2)]{\include(m,b) \\ \forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)\\e(\now)<t< m.\ar}{(e,b,\epsilon)\aoverto{t}(e,b,\sigma)}$}\\[2mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (Act EnvSync 3)]{b==\empt\\f\in \flow(\Mode(e({\mode})))\\f(0)==e\\f(t)==e'\\ \forall 0\le t'\le t\cdot(f(t')\models \inv(\Mode(e({\mode}))))}{(e,b,\epsilon)\aoverto{t}(e',b,\sigma)}$}\\[2mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (Setmode)]{}{e,{\it setmode}(\mathfrak{m})\stoverto{\tau} e[\mode\mapsto\mathfrak{m}],\top} $}\\[2mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (EndMode)]{e\models \guard(\Mode(e({\mode}))) }{(e,b,\epsilon)\aoverto{\tau}(e[\mode\mapsto {\it none}],b,\trigger(\Mode(e({\mode}))))}$}\\[3mm]
+%\multicolumn{2}{|c|}{$\inferrule*[left = (Net Receive)]{b\boverto{m?}b'}{(e,b)\noverto{m?}(e,b')}$} \\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (Transfer)]{b\boverto{m_1!}b'\\m_1.\ar+e(\delay)(m_1.\sndr,m_1.\name)==e(\now)\\
+\nexists m_2\cdot(b\boverto{m_2} \, \wedge\, e(\priority)(m_1.\sndr,m_1.\name)>e(\priority)(m_2.\sndr,m_2.\name) \wedge\\ m_2.\ar+e(\delay)(m_2.\sndr,m_2.\name)\le m_1.\ar+e(\delay)(m_1.\sndr,m_1.\name))\\m.\rcv==m_1.\rcv\\m.\name==m_1.\name \\m.\sndr==m_1.\sndr\\m.\ar==e(\now)+e(\delay)(m_1.\sndr,m_1.\name)}{(e,b)\noverto{m!}(e,b')}$}\\[3mm]
+%\multicolumn{2}{|c|}{$\inferrule*[left = (Net EnvSync)]{\include(m,b) \\\forall m'\cdot (\include(m',b)\Rightarrow m.\ar\le m'.\ar)\\e(\now)<t\le m.\ar}{(e,b)\noverto{t}(e,b)}$}\\[1mm]
+%\multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)==(e^\ast,b,\sigma) \\ (e^\ast, b, \sigma)\aoverto{\tau}(e',b',\sigma')}{(e,s,n)\overto{\tau}(e,s[x\mapsto(e',b',\sigma')],n)}$}\\[1mm]
+%\multicolumn{2}{|c|}{$\inferrule*[left = (comm 1)]{s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m!}(e',q',\sigma')\\ n \noverto{m?}n'}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+\multicolumn{2}{|c|}{$\inferrule*[left = (comm 2)]{n\noverto{m!}n'\\m.rcv==x \\ s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m?}(e',q',\sigma')\\\nexists y\in\ID\cdot(s(y)\aoverto{\tau})}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+%\multicolumn{2}{|c|}{$\inferrule*[left = (EnvProgress)]{\cur==e(\now)\\\exists t\cdot(\forall x\in \ID\cdot (s(x)\aoverto{t}s(x))\wedge n\noverto{t}n)}{(e,s,n)\overto{t}(e[\now\mapsto \cur+t],s,n)}$}\\[1mm]
+
+\hline
+\end{tabular}
+\end{table}
+
+Similar to Timed setting, the local state of an actor is defined in terms of the pair $(e,b,\sigma)$. % where $e\in\envT_{\it Actor}$. We partition $\envT_{\it Actor}$ into the two disjoint environments $\envT_{\it Actor_s}$ and $\envT_{\it Actor_p}$ for software and physical actors, respectively. 
+For a software actor, specified by $\langle id, V,\msgHandlr,\aqu\rangle$, %is defined in terms of the triple $(e_s,b,\sigma)$ where 
+%its environment $e_s\in\envT_{\it Actor_s}$ is similar to the rebecs of Timed setting, i.e., 
+it holds that $V\cup\{\self,\now,\rt\}=\domain(e)$. As physical rebecs has no delay statement, their environment does not contain the variable $\rt$, instead it has the variable $\mode$ indicating the active mode of the rebec. %So for the environment $e_p\in \envT_{\it Actor_p}$ of 
+For a physical actor, specified by $\langle id, V,\msgHandlr,\aqu, {\it Mode}\rangle$, %is defined in terms of the triple $(e_p,b,\sigma)$ where
+it holds that $V\cup\{\self,\now,\mode\}=\domain(e)$. Reactive rebecs have the same behavior to the ones in the timed setting and all the actor-level rules are valid for this setting. Physical rebecs have a similar behavior to software rebecs on processing their messages. So the rules \textsc{Receive}, \textsc{Internal}, and \textsc{Take} of the timed setting also work for the hybrid setting. We only define the rules for their continuous behaviors. The real-valued variables of a physical rebec update as time passes. So we define the semantic rules \textsc{EnvSync} for the physical rebecs to indicate when they agree with the advancement of time. The rule \textsc{EnvSync 3} expresses that time can passes as long as the invariant of the mode holds, and the variables are updated accordingly.
+
+We define the semantic rule of the newly added statements. The rule \textsc{Setmode} changes the active mode of a rebec. The rule \textsc{EndMode} expresses when the trigger statements of a mode block can be executed. When the guard of the mode holds, the mode is terminated by setting its value to the special mode $\it none$ in which the value of variables are freezed as time passes.%The rule ${\it envSync}$ explains that the time can progress as long as the invariant of the mode is satisfied by the value of variables. This rule extends the actor-level rules for defining the behavior of the actor upon its active mode termination. As explained by the rule, {\it trigger} of the active mode are executed. 
+
+
+The network environment has two additional variables $\delay$ and $\priority$ to maintain the CAN specification as a mapping. The variable $\delay:\ID\times\MName\rightarrow \Nat$, is itself a mapping that given the identifier of a rebec and communicated message name, it returns a delay value. Similarly variable $\priority:\ID\times\MName\rightarrow \Nat$ , is itself a mapping that given the identifier of a rebec and communicated message name, it returns a priority value. The lower the value, the higher the priority. The network-level rules \textsc{Receive} and \textsc{envSync}  are the same as the timed setting. As the network transfers messages with respect to their priority, we modify the rules \textsc{Transfer} by setting its appropriate $?{\it transferPolicy}$.  This policy selects the message with the highest priority that its delivery time has been arrived.
+
+
+The system-level rules are the same as the timed setting except for the rule \textsc{Comm 2}. As the network should transfer the message with the highest priority that should be delivered at the same time, the network should first receive all the messages and then transfer. We define the priority assumption such that the network can transfer when no rebec can have progress.  
