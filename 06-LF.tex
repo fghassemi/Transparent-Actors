@@ -7,50 +7,139 @@
 \newcommand{\reaction}[0]{\mathit{Reaction}}
 
 
-A given Lingua Franca (LF) model, is a collection of reactors and how they are connected together. Reactors are deterministic actors composed out of routines, called reactions, and coordinated under the DE semantics of Ptolemy. Reactions can be assumes as message handlers, and messages passing among reactors are timestamped and handled using the order of timestamps. Note that messages with identical timestamps are logically simultaneous and are handled in a deterministic order. For this case, the order of the definition of reactions determines their order. Reactors can also  share common state, have input and output ports, and actions. Composition of reactors is realized in the main reactor of the model. The connections among them define the flow of messages from an output port of a reactor to an input port of another one. An output port may be connected to multiple input ports, but an input port can only be connected to one output port \cite{DBLP:conf/cyphy/LohstrohRGDCLS19}. An example of a LF model is shown in Listing~\ref{src::LF}. 
+A given Lingua Franca (LF) model, is a collection of reactors and how they are connected together. Reactors are deterministic actors composed out of routines, called reactions, and coordinated under the DE semantics of Ptolemy. Reactions are invoked in response to trigger events, i.e. changing the value of its given parameters. A reaction can be assumed as a message handler, and messages passing among reactors are timestamped and handled using the order of timestamps. The parameters of a reaction is a list of the identifiers of input or clock variables. Note that messages with identical timestamps are logically simultaneous and are handled in a deterministic order. For this case, the order of the definition of reactions determines their order. Reactors can also  share common state, have input and output ports, and actions. Composition of reactors is realized in the main reactor of the model. The connections among them define the flow of messages from an output port of a reactor to an input port of another one. An output port may be connected to multiple input ports, but an input port can only be connected to one output port \cite{DBLP:conf/cyphy/LohstrohRGDCLS19}. An example of a LF model is shown in Listing~\ref{src::LF}. 
 
 \begin{example} 
-The model presented in Listing~\ref{src::LF} contains the \texttt{Ramp} reactor which sends messages, yielding a sequence of numbers beginning at 0 with a time intervals given by its given value to the parameter \texttt{p}. The \texttt{Ramp} reactor defines an output port of type \texttt{int}, named \texttt{out}, a clock for triggering reactions periodically, and an input of type \texttt{int}, named \texttt{set}. This reactor has two reactions,  triggered by the clock and the input \texttt{set}. The first reaction increments the value of the state variable count and sends its new value to the \texttt{out} port. The second reaction sets the value of the counter to the given value. The \texttt{Print} reactor has an input port that triggers its only reaction which prints the value sent to its input port. The composition of reactors is presented in the main reactor, which contains instances of each of reactors and connects their ports. The bodies of reactions are written in some target language; in our example they are written in \texttt{C}. The target code in the figure is delimited by \texttt{\{=} and \texttt{=\}}.
+The model presented in Listing~\ref{src::LF} contains the \texttt{Ramp} reactor which sends messages, yielding a sequence of numbers beginning at 0 with a time intervals given by its given value to the parameter \texttt{p}. The \texttt{Ramp} reactor defines an output port of type \texttt{int}, named \texttt{outValue}, a clock for triggering reactions periodically, and an input of type \texttt{int}, named \texttt{inValue}. This reactor has two reactions, triggered by the clock and the input \texttt{inValue}. The first reaction increments the value of the state variable count and sends its new value to the \texttt{outValue} port. The second reaction sets the value of the counter to the given value. The \texttt{Print} reactor has an input port that triggers its only reaction which prints the value sent to its input port. The composition of reactors is presented in the main reactor, which contains instances of each of reactors and connects their ports. The bodies of reactions are written in some target language; in our example they are written in \texttt{C}. The target code in the figure is delimited by \texttt{\{=} and \texttt{=\}}.
 \end{example} 
 
 \begin{lstlisting}[language=LF, multicols=2, caption=Example of a \texttt{Ramp} feeding into a \texttt{Print} reactor (inspired from a LF model presented in \cite{DBLP:conf/dac/LohstrohSGWGSL19}), label=src::LF]
 reactor Ramp(p:int(10)) { 
-    input set:int;
-    output out:int;
+    input inValue: int;
+    output outValue: int;
     state int count(0);
     clock c(p);
     
-    reaction(c) -> out {=
+    reaction(c) -> outValue {=
         count ++;
-        set(out, count); 
+        set(outValue, count); 
     =}
     
-    reaction(set) {= 
-        count = set;
+    reaction(inValue) {= 
+        count = inValue;
     =} 
 }
 reactor Print { 
-    input in:int; 
-    reaction(in) {=
-        printf("%d\n", in); 
+    input inValue:int; 
+    reaction(inValue) {=
+        printf("%d\n", inValue); 
     =}
 }
 main reactor System {
     a = new Ramp(p=100);
     b = new Print(); 
-    a.out -> b.in;
+    a.outValue -> b.inValue;
 }
 \end{lstlisting}
 
-A LF model is trivially converted into a system abstract syntax model with a minor extension. An abstract syntax of a reactor is defined as the tuple $\langle id, V, \msgHandlr, \inport, \outport\rangle $ where $id\in \ID$ is the reactor identifier, $V \subseteq \Var$ is the set of local variables, $\msgHandlr : \MName \rightarrow \Stmt^*$ define the set of statements an actor should execute in terms of the reactor name, $\inport \subseteq \Var$ and $\outport \subseteq \Var$ are input and output ports respectively. Note that $\MName$ contains the identifier of all of the reactions of reactors of a LF model. \fixme{Reactions do not have name! what shall we do for MName?}  %, $\action\subseteq \Var$ in the set of physical actions, $\reaction : \ReName \rightarrow \Stmt^*$ define the set of statement an actor should execute in terms of the reactor name.
+A LF model is trivially converted into a system abstract syntax model with a minor extension. An abstract syntax of a reactor is defined as the tuple $\langle id, V, \msgHandlr, \inport, \outport\rangle $ where $id\in \ID$ is the reactor identifier, $V \subseteq \Var$ is the set of local variables, $\msgHandlr : \MName \rightarrow \Stmt^*$ define the set of statements an actor should execute in terms of the reactor identifier, $\inport \subseteq \Var$ and $\outport \subseteq \Var$ are input and output ports respectively. Note that $\MName$ contains the identifier of all of the reactions of reactors of a LF model. %\fixme{Reactions do not have name! what shall we do for MName?}  %, $\action\subseteq \Var$ in the set of physical actions, $\reaction : \ReName \rightarrow \Stmt^*$ define the set of statement an actor should execute in terms of the reactor name.
 The set of $\Stmt$ for defining the body of reactor includes:\begin{itemize}
     \item set value $set(v, val)$ that sets the value of the output port $v$ to the value $val$.
     \item assignment $v={\it expr}$ that assigns the value of the expression ${\it expr}$ to $v\in\Var$.
     \item sequential composition $s_1;s_2$ that makes the two statements $s_1$ and $s_2$ execute sequentially.
 \end{itemize}
-\fixme{syntax of LF reactors are target language dependent! -> we focus on the modeling of reactors not the details of reactions statements}
+Note that as the syntax of LF reactions is target language dependent, we focus on the modeling of reactions containing the above statements not the details of reactions statements.
 
-The abstract syntax of the model in LF is the same as the system abstract syntax model.
+
+\subsubsection{Structure of Messages and Buffers}
+Messages in LF are tuples of four parts: the reactor identifier, the port name, the sent value, and the message delivery time. So, the set of messages is defined as $\Msg = \ID \times \Var \times \Value \times (\Nat \times \Nat)$. Time in LF is a pair of type $\Nat \times \Nat$. For a given time pair $(st,ms)$, $st$ is called the system time and $ms$ is called the micro-step in the system time. We use dot notation $m.rcv$, $m.prt$, $m.val$, $m.time$ to access the corresponding reactor identifier, the port identifier, the sent value, and the delivery time of a given message $m$.
+
+In this setting the structure of reactors and network buffers are identical and it is defined as a stable priority queue (A priority queue is called stable, if popping elements with the same priority takes place in the same order as they are inserted). We define the following functions on $\buffer_{\it Actor}$ to manipulate it. Here, the priority is defined based on the priority of corresponding reactions of messages. Note that reactions of a reactor has priority which is defined based on the order of the definition of reactions in the LF code.
+\begin{itemize} 
+\item $\insert:\buffer_{\it Actor} \times \Msg\rightarrow \buffer_{\it Actor}$: given a buffer and message, this function inserts the message into the buffer;
+\item $peek:\buffer_{\it Actor} \rightarrow \Msg$: denotes the message that is on the top of the queue;
+\item $\remove:\buffer_{\it Actor} \rightarrow \buffer_{\it Actor} $: it returns the message with the highest priority;
+\item $\size:\buffer_{\it Actor} \rightarrow \int$: denotes the number of elements in the buffer.
+\end{itemize}
+
+We define the same set of functions for $\buffer_{\it Net}$ to manipulate it. Here, the priority is defined based on the delivery time of messages:
+\begin{itemize} 
+\item $\insert:\buffer_{\it Net} \times \Msg\rightarrow \buffer_{\it Actor}$: given a buffer and message, this function inserts the message into the buffer;
+\item $peek:\buffer_{\it Net} \rightarrow \Msg$: denotes the message that is on the top of the queue;
+\item $\remove:\buffer_{\it Net} \rightarrow \buffer_{\it Net} $: it returns the message with the highest priority;
+\item $\size:\buffer_{\it Net} \rightarrow \int$: denotes the number of elements in the buffer.
+\end{itemize}
+
+The formal description of the stable priority queue structures and their functions are given in Section \ref{sec::LF::core-data}.
+
+
+%Mapping functions with the same semantics can be defined for $\buffer_{\it Net}$.
+
+%For a given multiset, we use $\oplus$ and $\ominus$ operators to add a message to the buffer and to remove a message from the buffer nondeterministically. The operations of \emph{put} and \emph{select} are defined using $\oplus$ and $\ominus$ as the following. 
+
+\subsubsection{Semantic Rules}
+Table~\ref{Tab::LF-semantic} illustrates the semantic rules of LF based on the template framework, presented in  Section~\ref{sec::generic}. As each input port of a reactor is connected to only one output port of another reactor, a limited number of messages can be sent to the input ports of each reactor. As a result, a big enough buffer can receive all the incoming messages; so, the interface function $\insert$ has no limitation and its $?{\it putPolicy}$ is set to true. Actors and the network are allowed to pick an element from the top of their priority queue. So, the condition of $Select$ is only having the element at the top of the queue. The same argument is valid for the buffer of the network.
+
+The local state of a reactor inform of $\langle id, V, \msgHandlr, \inport, \outport\rangle$, is defined in terms of the triple $(e,b, \sigma)$ where $e$ defines the value of the state variables of the reactor such that $V\cup\{\mathit{this}\}=\domain(e)$ and $e(\mathit{this})=id$, $b$ is its internal buffer and $\sigma$ is the sequence of currently executing statements. Reactors in LF do not have access to the current time; so, there is no need to define the actor-level rule \textsc{EnvProgress}. This way, LF has three actor-level rules \textsc{Receive}, \textsc{Take}, and \textsc{Internal} for defining the behavior of reactors, and five rules for its statements. The definition of \textsc{Receive}, \textsc{Take}, and \textsc{Internal} rules of LF are the same as that of the template framework. The rule \textsc{SET} defines the behavior for the send messages to the others, the rule \textsc{Assign} for assignment, and the rule \textsc{Seq} for the sequential composition. In the rule \textsc{Assign}, $\eval(\expr,e)$ is the value of the expression $\expr$ with respect to the environment $e$. The two rules \textsc{Cond 1} and \textsc{Cond 2} express the behavior of the conditional statement.
+
+Following the structure of the network in the template framework, the local state of the network is defined in terms of the tuple $(e,b)$ where $e$ defines the value of the state variables of the network and $b$ is its internal buffer. Note that $\{\mathit{now, map, pty}\}=\domain(e)$ and $e(\mathit{now})$ shows the global time of the model. The function $e(\mathit{map})$ is in the form of $\ID \times \Var \rightarrow \ID \times \Var \times \Nat$, contains the topology of a given LF model (including correspondence among input/output ports and their delay times). The $map$ function maps its given reactor id and output port id to a tuple which contains the receiver reactor id, the input port id, and its delay time. The function $e(\mathit{pty})$ is in the form of $\ID \rightarrow \Nat$ which returns the priority of each reactor. As mentioned before, in the case of having two ready to execute reactors, the reactor with the highest priority is executed before the reactor with the lowest priority. 
+
+LF has all of the three network-level rules \textsc{Receive}, \textsc{Transfer}, and \textsc{EnvProgress}. The \textsc{Transfer} rule in LF is the same as that of in the template framework. But, as the network transfers messages with respect to their delivery time, it has a guard to enable transferring for messages which their time is the same as the current time. The \textsc{Receive} rule receives a message containing its output port information and generates its corresponding message which has to be delivered to the receiver reactor using the topology of the model (which includes the receiver id and port, the sent value, and transferring time). The \textsc{Receive} rule is also responsible for taking care of timing issues of the message. If the message is sent without transferring time, the micro-step part of this message has to be set to the next micro-step (i.e. the \textsc{Receive 1} rule). But, if a value is associated with it as the transferring time, the micro-step of the transferring time has to be set to zero (i.e. the \textsc{Receive 2} rule). Finally, rule \textsc{EnvProgress} is defined to illustrate the minimum time progress which enables network to deliver a message.
+
+Considering the system rules, \textsc{ActorProgress}, \textsc{Comm 1}, and \textsc{Comm 2} in LF are the same as that of in the template framework. The rule of \textsc{EnvProgress} in LF is updated to support time progress.
+
+%The value which is assigned As for any $e^\ast\in\envT$, $e^\ast\cup e=e$ and $e^\ast\setminus e=e$ when $\domain(e)=\emptyset$, the rules at the system level are simplified as illustrated in Table \ref{Tab::ClassicRules}. Since no priority is considered for the delivery of messages, the assumption $?{\it priorityPolicy}$ is set to true in the rule \textsc{Comm 2}. \fixme{Explain this more!} %As this setting has no time concept, there is no need to define the rule \textsc{EnvSync}.
+
+%-------------------------------
+\begin{table}[]
+\centering
+\caption{The semantic rules of LF: $q\in \buffer_{\it Actor}$ and $b\in \buffer_{\it Net}$}
+\label{Tab::LF-semantic}
+\begin{tabular}{|l|ccc|}
+\hline
+\multirow{2}{*}{\begin{sideways}Buffer\end{sideways}} 
+& \multicolumn{1}{c|} {\begin{sideways}Actor\end{sideways}}& $\inferrule*[left = (Select)]{peek(q) = m}{q\boverto{m!}\remove(q)}$ & $\inferrule*[left = (Put)]{q\boverto{m?}\insert(q, m)}{}$\\[1mm] \cline{2-4} 
+& \multicolumn{1}{c|} {\begin{sideways}Network\end{sideways}}& $\inferrule*[left = (Select)]{peek(q) = m}{b\boverto{m!}\remove(b)}$ & $\inferrule*[left = (Put)]{b\boverto{m?}\insert(b, m)}{}$\\[1mm]
+\hline
+%------------Actor
+\multirow{5}{*}{\begin{sideways}Actor\end{sideways}} & & $\inferrule*[left = ( Receive)]{q\boverto{m?}q'}{(e,q,\sigma)\aoverto{m?}(e,q',\sigma)}$ & 
+$\inferrule*[left = (Internal)]{e,\sigma\stoverto{\tau}e',\sigma'}
+{(e,q,\sigma)\aoverto{\tau}(e',q,\sigma')}$ \\[1mm]
+& \multicolumn{3}{c|}{$\inferrule*[left = (Take)]{q\boverto{m!}q'}{(e,q,\epsilon)\aoverto{m}(e,q',\msgHandlr(m.\name))}$} \\[1mm] \cline{2-4}
+%---------------Statement
+& \multirow{3}{*}{\begin{sideways}Statement\end{sideways}} &
+\multicolumn{1}{|c}{$\inferrule*[left = (Cond 1)]{\eval(\expr,e)\\e,\sigma_1\stoverto{\tau}e',\top}{e,{\it if}~ (\expr) ~\sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$} & $\inferrule*[left = (Seq)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$\\[1mm]
+& &  \multicolumn{1}{|c}{$\inferrule*[left = (Cond 2)]{\neg\eval(\expr,e)\\e,\sigma_2\stoverto{\tau}e',\top}{e,{\it if}~ (\expr)~ \sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$} & $\inferrule*[left = (Set)]{}{e,(p_o,v) \stoverto{(e(\mathit{this}),p_o,v,(0,0))!}e,\top}$\\[1mm]
+& & \multicolumn{2}{|c|}{$\inferrule*[left = (Assign)]{}{e,v= \expr \stoverto{\tau} e[v\mapsto \eval(\expr,e)],\top}$} \\[1mm]
+\hline
+%-------------Network
+\multirow{4}{*}{\begin{sideways}Network\end{sideways}} 
+& \multicolumn{3}{|c|}{$\inferrule*[left = (Transfer)]{b\boverto{m!}b'\\ m.time = e(now)}{(e,b)\noverto{m!}(e,b')}$} \\[1mm]
+& \multicolumn{3}{|c|}{$\inferrule*[left = (Receive 1)]{m=(a,p,v,(0,0)) \\ (a',p',t')=map(a,p) \\ t' = 0 \\ e(now)=(st,ms) \\ b\overto{(a',p',v,(st, ms + 1))?}b'}{(e,b)\overto{m?}(e,b')}$} \\[1mm]
+& \multicolumn{3}{|c|}{$\inferrule*[left = (Receive 2)]{m=(a, p, v, (0,0)) \\ (a', p', t')=map(a, p) \\ t' \neq 0 \\ e(now)=(st,ms) \\ b\overto{(a', p', v, (st + t', 0))?}b'}{(e,b)\overto{m?}(e,b')}$} \\[1mm]
+& \multicolumn{3}{|c|}{$\inferrule*[left = (EnvProgress)]{m = peek(b) \\ t=m.time \\ e(now) \neq t} {(e,b)\overto{t}(e[\now\mapsto t],b)}$} \\[1mm]
+\hline
+%---------------System
+\multirow{4}{*}{\begin{sideways}System\end{sideways}} 
+&  \multicolumn{3}{c|}{$\inferrule*[left = (ActorProgress)]{s(x)=(e^\ast,b,\sigma) \\ (e\cup e^\ast, b, \sigma)\aoverto{\tau}(e',b',\sigma') \\ \nexists\,y\in \mathit{ID} \cdot s(y)=(e^{\dag},b^{\dag},\sigma^{\dag}) \wedge e(pty(y)) > e(pty(x))\wedge (e\cup e^\dag, b^{\dag}, \sigma^{\dag})\aoverto{\tau}(e'',b'',\sigma'') }{(e,s,n)\overto{\tau}(e,s[x\mapsto(e'\setminus e,b',\sigma')],n)}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (comm 1)]{s(x)=(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m!}(e',q',\sigma')\\ n \noverto{m?}n'}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (comm 2)]{n\noverto{m!}n'\\m.rcv=x \\ s(x)=(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m?}(e',q',\sigma')}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\
+&\multicolumn{3}{c|}{$\inferrule*[left = (EnvProgress)]{ n\noverto{t}n'} {(e,s,n)\overto{t}(e[\now\mapsto \cur+t],s,n')}$}\\
+\hline
+\end{tabular}
+\end{table}
+
+
+
+
+
+
+
+
+
+\begin{comment}
+%----------------------------------------------
+% The abstract syntax of the model in LF is the same as the system abstract syntax model.
 
 \subsubsection{Structure of Messages and Buffers}
 
@@ -114,37 +203,40 @@ The local state of a reactor inform of $\langle id, V, \msgHandlr, \inport, \out
 
 Actors in LF do not have access to the current time; so, there is no need to define the rule \textsc{EnvSync}. So, LF has three actor-level rules \textsc{Receive}, \textsc{Take}, and \textsc{Internal} for defining the behavior of actor, and three rules for its statements. All of the actor-level rules of LF are the same as that of the generic framework, so they are inherited with no modification. We only define the assumptions $\mathit{?takePolicy}(e,b)$ to always return \texttt{true}. The formal definition of LF basic statements is presented in Table~\ref{Tab::LF-semantic}.
 
-\begin{comment}
-\begin{itemize}
-    \item this setting has the rule $\receive$ of the generic framework with no modification: 
-$$\inferrule*[left = (receive)]{b\boverto{m?}b'}{(e,b, \sigma)\aoverto{m?}(e, b', \sigma)}$$
 
-    \item In Lingua Franca, changing the value of an input port results in taking its corresponding message and calling its reactor as shown by the rule $\take$:
 
-$$\inferrule*[left = (take)]{b\boverto{m!}b' \\ e'=e[m.port\mapsto m.value]}{(e,b,\epsilon)\aoverto{m}(e',b',\msgHandlr(m.name))}$$
+% \begin{comment}
+% \begin{itemize}
+%     \item this setting has the rule $\receive$ of the generic framework with no modification: 
+% $$\inferrule*[left = (receive)]{b\boverto{m?}b'}{(e,b, \sigma)\aoverto{m?}(e, b', \sigma)}$$
 
-We remark that the second condition of this rule addresses sequential execution of statements, corresponding to the taken message, which is defined as:
+%     \item In Lingua Franca, changing the value of an input port results in taking its corresponding message and calling its reactor as shown by the rule $\take$:
 
-$$\inferrule*[left = (internal)]{e,\sigma \aoverto{\alpha}e', \sigma'}{(e,b,\sigma)\aoverto{\alpha}(e',b,\sigma')}$$
+% $$\inferrule*[left = (take)]{b\boverto{m!}b' \\ e'=e[m.port\mapsto m.value]}{(e,b,\epsilon)\aoverto{m}(e',b',\msgHandlr(m.name))}$$
 
-such that the statement-level rules are
-$$\inferrule*[left = (set)]{e,(p_o,v) \overto{(e(\self),p_o,v,(0,0))}e,\top}{}$$
-$$\inferrule*[left = (assignment)]{e,v:=expr \overto{\tau}e[v\mapsto \eval(\expr,e)],\top]}{}$$
+% We remark that the second condition of this rule addresses sequential execution of statements, corresponding to the taken message, which is defined as:
 
-and $\eval(\expr,e)$ is the value of the expression $\expr$ with respect to the environment $e$. 
+% $$\inferrule*[left = (internal)]{e,\sigma \aoverto{\alpha}e', \sigma'}{(e,b,\sigma)\aoverto{\alpha}(e',b,\sigma')}$$
 
-\end{itemize}
-The statement-level rules of LF are:
-$$\inferrule*[left = (Set)]{e,(p_o,v) \stoverto{(e(\self),p_o,v,(0,0))!}e,\top}{}$$
-$$\inferrule*[left = (Assignment)]{e,v:=expr \stoverto{\tau}e[v\mapsto \eval(\expr,e)],\top]}{}$$
-$$\inferrule*[left = (SequentialComposition)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$$
-\end{comment}
+% such that the statement-level rules are
+% $$\inferrule*[left = (set)]{e,(p_o,v) \overto{(e(\self),p_o,v,(0,0))}e,\top}{}$$
+% $$\inferrule*[left = (assignment)]{e,v:=expr \overto{\tau}e[v\mapsto \eval(\expr,e)],\top]}{}$$
+
+% and $\eval(\expr,e)$ is the value of the expression $\expr$ with respect to the environment $e$. 
+
+% \end{itemize}
+% The statement-level rules of LF are:
+% $$\inferrule*[left = (Set)]{e,(p_o,v) \stoverto{(e(\self),p_o,v,(0,0))!}e,\top}{}$$
+% $$\inferrule*[left = (Assignment)]{e,v:=expr \stoverto{\tau}e[v\mapsto \eval(\expr,e)],\top]}{}$$
+% $$\inferrule*[left = (SequentialComposition)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$$
+% \end{comment}
 
 %\subsubsection{Semantic Rules of Abstract Network}
 
 Following the structure of the network in the general framework, the local state of the abstract network is defined in terms of the tuple $(e,b)$ where $e$ defines the value of the state variables of the network and $b$ is its internal buffer. The \textsc{Transfer} rule in LF is the same as that of in the general framework. But, as the network transfers messages with respect to their delivery time, we modify  $?{\it transferPolicy}$ to enable transferring for messages which their time is the same as the current time. The \textsc{Receive} rule receives a message containing its output port information and generates its corresponding message which has to be delivered to the receiver actor, containing information of the receiver id and port, the sent value, and transferring time using topology of the model. It is also responsible for taking care of timing issues of the message. If the message is sent without transferring time, the micro-step part of this message has to be set to the next micro-step.  But, if a transferring time is associated to binding of the ports of this message, the micro-step of transferring time has to be set to zero. Finally, rule \textsc{EnvSync} is defined to illustrate the minimum time progress which enables network to deliver a message. These three rules are shown in Table~\ref{Tab::LF-semantic}.
 
 Considering the system rules, \textsc{ActorProgress}, \textsc{Comm1}, and \textsc{Comm2} in LF are the same as that of in the general framework. The rule of \textsc{EnvProgress} in LF is updated to support time progress as shown in Table~\ref{Tab::LF-semantic}.
+\end{comment}
 
 \begin{comment}
 
@@ -181,8 +273,6 @@ $$\inferrule*[left = (Comm_2)]{(e^\ast, b, \sigma)\overto{m?}(e',b',\sigma') \\ 
 \item As the environment is empty, it has no rule for the progress of the environment. 
 
 \end{itemize}
-\end{comment}
-\begin{comment}
 class Port
 {
     name % a unique string, owner::port_name

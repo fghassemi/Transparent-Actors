@@ -1,5 +1,5 @@
-\section{Generic Framework}\label{sec::generic}
-In actor models, we distinguish three entities and we make them explicit: actors, buffers, and the network which we call it the abstract network. Our generic framework provides a set of template rules to define the semantic model of actor-based languages. We identify a set of variation points in the semantic rules that their adjustment leads to different semantic rule implementations. These variation point explicitly shows the various assumptions and policies that are considered in implementing the actor-based computation model. % based on Agha's actor model \cite{Agha90}. 
+\section{Semantic Specification Framework}\label{sec::generic}
+In actor models, we distinguish three entities and we make them explicit: actors, buffers, and the network which we call it the abstract network. Our semantic specification framework provides a set of template rules to define the semantic model of actor-based languages. We identify a set of variation points in the semantic rules that their adjustment leads to different semantic rule implementations. These variation point explicitly shows the various assumptions and policies that are considered in designing/implementing the actor-based computation model. % based on Agha's actor model \cite{Agha90}. 
 To make our framework independent of any specific language syntax, we provide a system abstract syntax model $\mathcal{M}$ that describes a specified system at a higher level of abstraction. Our abstract syntax model is defined as generic as possible to comply with most actor-based languages.
 
 %Our generic framework defines the semantic model of a system abstract system model based on labeled transition systems (LTSs). 
@@ -8,16 +8,16 @@ is the set of global states, also called system states. Global states are define
 \begin{array}{l}
 \forall a\in\domain(e)\cdot(a\neq\mathfrak{x}\Rightarrow e[\mathfrak{x}\mapsto\mathfrak{y}](a)=e(a) \wedge a=\mathfrak{x}\Rightarrow e[\mathfrak{x}\mapsto\mathfrak{y}](a)=\mathfrak{y}).
 \end{array}
-\]We use $e_1\cup e_2$ to aggregate the valuations $e_1$ and $e_2$, where $\domain(e_1\cup e_2)=\domain(e_1)\cup\domain(e_2)$, and $e_1\setminus e_2$ to excludes valuations of $e_2$ from $e_1$, where $\domain(e_1\setminus e_2)=\domain(e_1)\setminus\domain(e_2)$:\[
+\]We use $e_1\cup e_2$ to aggregate the valuation functions $e_1$ and $e_2$ where the values assigned by $e_2$ overwrites the values of $e_1$ for common variables, where $\domain(e_1\cup e_2)=\domain(e_1)\cup\domain(e_2)$. We also use $e_1\setminus e_2$ to excludes valuations of $e_2$ from $e_1$, where $\domain(e_1\setminus e_2)=\domain(e_1)\setminus\domain(e_2)$:\[
 \begin{array}{l} 
 \forall a\in\domain(e_1 \cup e_2)\cdot(a\in \domain(e_2)\Rightarrow e_1\cup e_2(a) = e_2(a) \,\wedge \\ \hspace*{1cm} a\in \domain(e_1)\setminus\domain(e_2)\Rightarrow e_1\cup e_2(a) = e_1(a))\vspace*{1mm}\\
 \forall a\in\domain(e_1 \setminus e_2)\cdot( e_1\setminus e_2(a) = e_1(a)) 
 \end{array}
-\]We use $\Upsilon$ to show a valuation function that $\domain(\Upsilon)=\emptyset$.
+\]%We use $\Upsilon$ to show a valuation function that $\domain(\Upsilon)=\emptyset$.
 
 The transition relation $\rightarrow \,\subseteq \gstate\times \Act \times \gstate$ expresses how the global states of the system evolve. We define the semantic rules of the system based on the behavior of the abstract network  %$\noverto{}\subseteq {\it NetLocal}\times\Act \times {\it NetLocal}$ 
 and actors. %$\aoverto{}\subseteq \local\times \Act \times \local$. 
-We express the behavior of actors and abstract network by providing a template rule for their interface functions, i.e., $\receive$ and $\take$ of actors, and $\receive$ and $\transfer$ of abstract network entity. %a set of rules which show how their local states change. 
+We express the behavior of actors and abstract network by providing template rules for their interface functions, i.e., $\receive$ and $\take$ of actors, and $\receive$ and $\transfer$ of abstract network entity. %a set of rules which show how their local states change. 
 Both actor and abstract network rely on buffers, so we should also define the behavior of buffers upon calling their interface functions, i.e., $\put$ and $\select$. %We provide a template rule for each interface function of actors, i.e., $\receive$ and $\take$ and abstract network entity, i.e., $\receive$ and $\transfer$. %In addition to the rules for the interface functions, we define rules for the abstract network, actors, and system to specify how they internally progress. The meta-rules of the system subsume rules for the interactions among of its constituent entities.
 
 
@@ -30,28 +30,29 @@ Both actor and abstract network rely on buffers, so we should also define the be
 \subsection{Abstract Syntax Model}\label{sec::AbstractSyntaxModel}
 %To make our semantic model independent of any specific language syntax, we provide an abstract syntax model that describes specified models at a higher level of abstraction. We define this model with regard to Agha's actor model \cite{Agha90}.
 
-Let $\ID$ be the set of actor identifiers, ranged over by $x$ and $y$, and $\Msg$ a set of messages communicated among the actors, ranged over by $m$. As the structure of message elements differs in each language, we do not specifies it. The structure should be defined for each language when the generic rules are instantiated. We assume that each message has a name and can be accessed by the dot notation $m.\name$. We represent the set of message names by $\MName$. Actors handle messages based on the name of messages. Let $\Stmt$ denote the set of statements defined by the language.%. The elements of this set are defined by the language. %Each message is a pair of content and appended information, i.e,  $\Msg=\Content\times \InfoT$; the content is a triple of a sender identifier, method name, receiver identifier, i.e., $\ID\times \MName\times\ID$. The set $\MName$ is the set of method names that an actor can handle, ranged over by $\mathfrak{m}$. This set is defined by the given actor model. The type $\InfoT$ abstracts the additional information that are appended to the messages in different system settings; in the timed setting, it may contain the arrival time of messages and the message deadline or the priority of the message.  %\FG{In the basic framework, this type is empty.} 
+Let $\ID$ be the set of actor identifiers, ranged over by $x$ and $y$, and $\Msg$ a set of messages communicated among the actors, ranged over by $m$. As the structure of message elements differs in each language, we do not specify it. The structure should be defined for each language as needed. %when the template rules are adjusted. 
+We assume that each message has a name and can be accessed by the dot notation $m.\name$. We represent the set of message names by $\MName$. Actors handle messages based on the name of messages. Let $\Stmt$ denote the set of statements defined by the language.%. The elements of this set are defined by the language. %Each message is a pair of content and appended information, i.e,  $\Msg=\Content\times \InfoT$; the content is a triple of a sender identifier, method name, receiver identifier, i.e., $\ID\times \MName\times\ID$. The set $\MName$ is the set of method names that an actor can handle, ranged over by $\mathfrak{m}$. This set is defined by the given actor model. The type $\InfoT$ abstracts the additional information that are appended to the messages in different system settings; in the timed setting, it may contain the arrival time of messages and the message deadline or the priority of the message.  %\FG{In the basic framework, this type is empty.} 
 
 \begin{defn}[Actor Abstract Syntax Model]\label{Def::absActor}
 An abstract syntax model of an actor is defined by the vector $\langle id, V,\msgHandlr\rangle $ where $id\in \ID$ is the actor identifier, $v\subseteq \Var$ is the set of local variables, and $\msgHandlr : \MName \rightarrow \Stmt^*$ define the set of statement an actor should execute based on the message name%, and $\aqu\subseteq \ID$ is the set of acquaintances that an actor can communicate with.
 \end{defn}
-In the classic actor model of Agha, each actor is also defined by its acquaintances, the set of actors that it can communicate with. \fixme{As this set may be dynamic in some languages \cite{mellati}, we remove it from the syntax and model it by a variable of actor environment.} 
+In the classic actor model of Agha, each actor is also defined by its acquaintances, the set of actors that it can communicate with. As this set may be dynamic in some languages \cite{mellati}, we remove it from the abstract syntax model and address it by considering a variable in the actor environment that maintains the set of acquaintance identifiers. 
 %\fixme{aqu should be removed : in the semantics it has a meaning ; it was in the first actor models but dynamic}  
 
-An actor-based system is composed of a set of actors and an abstract network. We define the abstract syntax model of the system: 
+An actor-based system is composed of a set of actors and an abstract network. We define the abstract syntax model of the system based on its constituent actors. We remark that as the network entity is not explicitly specified in the most of actor-based languages, we do not define an abstract syntax model for network.  
 
 \begin{defn}[System Abstract Syntax Model]\label{Def::absSystem}
-An abstract syntax model of an actor-based system $\mathcal{M}$ is defined by the pair $\langle \ID, R\rangle $ where $R$ is a set of actor abstract syntax models with identifiers from $\ID$. %and $N$ is the abstract model of the network entity.
+An abstract syntax model of an actor-based system $\mathcal{M}$ is defined by the pair $\langle \ID, R\rangle $ where $R$ is the set of actor abstract syntax models with identifiers from $\ID$. %and $N$ is the abstract model of the network entity.
 \end{defn}
 
 %\fixme{what is the abstract model of the network, maybe we should define it with respect to LF?}
 
 
 %------------------
-\subsection{Meta-Rules of Buffers}
-Buffer provides two interface functions $\select$ and $\put$ to collaborate with other entities. The function $\select$ includes the policy by which an item is selected from the buffer while the function $\put$ includes the policy by which an item can be inserted into the buffer. %specifies the behavior of the buffer when an item is inserted into the buffer. 
+\subsection{Template Rules of Buffer}
+Buffer provides two interface functions $\select$ and $\put$ to collaborate with other entities. The function $\select$ includes the policy by which an item is selected from the buffer while the function $\put$ includes the policy by which an item is inserted into the buffer. %specifies the behavior of the buffer when an item is inserted into the buffer. 
 
-The semantics of these interface functions depends on the inner structure of the buffer. Assume the data type $\buffer$ defines the inner structure buffers, ranged over by $b$. The meta-rules at this level define the meaning of interface function by the relation $\boverto{} \,\subseteq \buffer\times \Act \times \buffer$. The given rules have assumptions that may vary for each language and should be defined accordingly. 
+The semantics of these interface functions depends on the inner structure of the buffer. Assume the data type $\buffer$ defines the inner structure buffers, ranged over by $b$. The template rules at this level define the meaning of interface function by the relation $\boverto{~~} \,\subseteq \buffer\times \Act \times \buffer$. The given rules have assumptions that may vary for each language and should be defined accordingly. 
 
 Our framework considers a rule for each interface function: 
 \[\begin{array}{cc}
@@ -61,7 +62,7 @@ Our framework considers a rule for each interface function:
 \] The goal of the assumption $?{\it putPolicy}(b,m)$ is to indicate when the message $m$ can be inserted into the buffer. By specifying this assumption, we determine the policy for handling overflow, or stale or duplicate messages. The goal of the assumption $?{\it selectPolicy}(b,m)$ is to express the conditions for removing an item from the buffer. By specifying this assumption, we explicitly identify the policy for selecting the message $m$ from the buffer. This policy may consider a priority or the timestamp of messages. The update of buffer $b$ upon inserting and removing an item depends on the structure of buffer. So the functions $?\insert(b,m)$ and $?\remove(b,m)$ should be defined on the data type $\buffer$.
 
 %--------------------
-\subsection{Meta-Rules of Actor}
+\subsection{Template Rules of Actor}
 We define the semantic of actors by the relation $\aoverto{}\,\subseteq \local\times \Act \times \local$ where $\local$ is the set of local states of actors. The local states of an actor are defined by the value of its variables, buffer content, and program counter. We represent a local state by the triple $(e,b,\sigma)$ where $e\in\envT_{\it Actor}$ is a valuation function, $b\in\buffer_{\it Actor}$ is the local buffer of the actor, and $\sigma\in \Stmt^*$ is the sequence of statements. It shows the program counter of an actor by expressing the remaining statements (from the program counter) of a message handler that should be executed. An empty sequence, denoted by $\epsilon$, shows that the actor is not busy by executing a message handler. The set of actor local states is defined as $\local = \envT_{\it Actor}\times\buffer_{\it Actor}\times 
 \Stmt^\ast$. 
 
@@ -112,7 +113,7 @@ The statement-level rules should be provided by the user with regard to the set 
 %\Rule{?{\it stCondition(e,\sigma_1,\ldots,\sigma_m)}}{(e,s(\sigma_1,\ldots,\sigma_m))\overto{\tau}(e',\sigma')}
 %\] 
 %-----------------------
-\subsection{Meta-Rules of Abstract Network}
+\subsection{Template Rules of Abstract Network}
 We define the semantics of the abstract network entity by the relation $\noverto{}\,\subseteq {\it NetLocal}\times\Act \times {\it NetLocal}$ where ${\it NetLocal}$ is the set of network entity local states. We represent the local state of the abstract network entity by a pair of $(e,b)$ where $e\in\envT_{\it Net}$ is the valuation of network local variables and $b\in\buffer_{\it Net}$ is its local buffer.  The set of local states of the network is defined as ${\it NetLocal}=\envT_{\it Net}\times \buffer_{\it Net}$.
 
 The abstract network entity provides two interface functions $\receive$ and $\transfer$. An actor calls the interface function $\receive$ to deliver its message for transmission. The interface function $\transfer$ is called to transfer the buffer messages. (If we consider the abstract network entity as an active entity, the thread of network calls $\transfer$.) The network-level meta-rules define the semantics of the network function interfaces and how it internally progresses:
@@ -134,7 +135,7 @@ The abstract network entity provides two interface functions $\receive$ and $\tr
 \end{itemize}
 %-----------------------------------
 
-\subsection{Meta-Rules of the System}
+\subsection{Template Rules of the System}
 %\FG{System is composition rule!}
 We define the semantics of the system by the relation $\overto{}\,\subseteq \gstate\times\Act \gstate $ where $\gstate$ is the set of global states. The global states of the system are defined by the values of global variables, the local states of actors, and the local state of the abstract network entity. We represent a global state by the triple $(e,s,n)$ where $e\in\envT_{\it Sys}$ is the valuation function for the global variables that are shared among the actors, $s: \ID\rightarrow \local$ is a mapping from actor identifiers to their local state, and $n\in {\it NetLocal}$ is the network local state. %The environment $e$ defines a set  Actors cannot change these variables and can only read from them.
 

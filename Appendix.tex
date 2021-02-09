@@ -63,7 +63,7 @@ In this setting the structure of actor and network buffers are identical and it 
 \end{array}
 \]
 
-\subsection{ABS}
+\subsection{ABS} \label{sec::abs::core-data}
 We define the structure of object buffers as a multiset of messages by the two constructors $\empt: \buffer_{\it Actor}$, denoting an empty buffer, and $\frown: \Msg \times \int \times \buffer_{\it Actor}  \rightarrow \buffer_{\it Actor}$, puts a message in the buffer. We define the following mappings on $\buffer_{\it Actor}$:
 \begin{itemize} 
 \item $\insert:\buffer_{\it Actor} \times \Msg\rightarrow \buffer_{\it Actor}$: given a buffer and message, this function inserts the message into the buffer;

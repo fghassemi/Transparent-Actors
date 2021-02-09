@@ -16,29 +16,37 @@ The code of Figure~\ref{fig:abs:phils} presents the model of the dining philosop
 	\label{fig:abs:phils}
 \end{figure}
 
-ABS models can be easily converted into the system abstract syntax model of Section~\ref{sec::AbstractSyntaxModel}. For simplicity, we have assumed that messages has no parameter. The set of $\ID$ is defined by the name of instantiated objects. For each object of class $C$, the class methods are $\msgHandlr$ of the object, class state variables are $\Var$. The name of all methods define the set of $\MName$. The set of $\Stmt$ for defining the body of methods includes:\begin{itemize}
+ABS models can be easily converted into the system abstract syntax model of Section~\ref{sec::AbstractSyntaxModel}. For simplicity, we have assumed that messages in ABS has no parameter. The set of $C$ is defined by the identifier of classes of the model and $\ID$ is defined by the name of instantiated objects from classes of $C$. For each object of class $c$, the class methods are $\msgHandlr$ of the object and class state variables are $\Var$. The name of all methods define the set of $\MName$. The set of $\Stmt$ for defining the body of methods includes:\begin{itemize}
     \item send statement $x!\mathfrak{m}$ that sends a message with the name $\mathfrak{m}\in\MName$ to the object with the identifier $x$.
     \item assignment $v={\it expr}$ that assigns the value of the expression ${\it expr}$ to $v\in\Var$;
     \item sequential composition $s_1;s_2$ that makes the two statements $s_1$ and $s_2$ execute sequentially.
     \item conditional statement ${\it if}~ (\expr) ~s_1 ~{\it else}~s_2 $ that executes the statement $s_1$ and $s_2$ based on the Boolean value of $\expr$,
 \end{itemize}
-Note that we do not support \emph{future} in this work.
+Note that we do not support \emph{future} statement of ABS in this work.
 
 \subsubsection{Structure of Messages and Buffers}
-The set of messages in asynchronous message calls of ABS is defined as $\Msg = \ID \times \Var \times \ID$ which is a tuple of the identifier of the sender object, the method name, and the identifier of the receiver object. We use dot notation $m.s$ and $m.r$ to access the sender and receiver object identifiers of a given message $m$. We define the structure of object buffers in ABS as a multiset.
+The set of messages in asynchronous message calls of ABS is defined as $\Msg = \ID \times \Var \times \ID$ which is a tuple of the identifier of the sender object, the method name, and the identifier of the receiver object. We use dot notation $m.snd$, $m.rcv$, and $m.name$ to access the sender object identifiers, the receiver object identifiers, and the message handler name of a given message $m$, respectively. %We define the structure of object buffers in ABS as a multiset.
 
 
-In this setting the structure of actor and network buffers are identical and it is defined as a multiset. A multiset is a map that stores the multiplicity for each distinct member. %For a given multiset $ms$, the multiplicity of an element $e$ is denoted by $\nu(ms, e)$.
+In this setting the structure of objects and network buffers are identical and it is defined as a multiset. A multiset is a map that stores the multiplicity for each distinct member. %For a given multiset $ms$, the multiplicity of an element $e$ is denoted by $\nu(ms, e)$.
 %We define the structure of object buffers as a multiset of messages by the two constructors $\empt: \buffer_{\it Actor}$, denoting an empty buffer, and $\frown: \Msg \times \int \times \buffer_{\it Actor}  \rightarrow \buffer_{\it Actor}$, puts a message in the buffer. 
-We define the following mappings on $\buffer_{\it Actor}$:
+We define the following functions on $\buffer_{\it Actor}$ to manipulate it:
 \begin{itemize} 
 \item $\insert:\buffer_{\it Actor} \times \Msg\rightarrow \buffer_{\it Actor}$: given a buffer and message, this function inserts the message into the buffer;
 \item $contains:\buffer_{\it Actor} \times \Msg \rightarrow boolean$: specifies that if the multiset contains the given message;
 \item $\remove:\buffer_{\it Actor} \times \Msg \rightarrow \buffer_{\it Actor} $: it returns a multiset by removing one instance of the given $\Msg$ from the multiset;
 \item $\size:\buffer_{\it Actor} \rightarrow \int$: denotes the number of elements in the buffer.
-%\item ${\it cnt}:\buffer_{\it Actor} \times \Msg \rightarrow \int$: denotes the multiplicity of given message in the given multiset .
 \end{itemize}
 
+We define the same set of functions for $\buffer_{\it Net}$ to manipulate it:
+\begin{itemize} 
+\item $\insert:\buffer_{\it Net} \times \Msg\rightarrow \buffer_{\it Actor}$: given a buffer and message, this function inserts the message into the buffer;
+\item $contains:\buffer_{\it Net} \times \Msg \rightarrow boolean$: specifies that if the multiset contains the given message;
+\item $\remove:\buffer_{\it Net} \times \Msg \rightarrow \buffer_{\it Net} $: it returns a multiset by removing one instance of the given $\Msg$ from the multiset;
+\item $\size:\buffer_{\it Net} \rightarrow \int$: denotes the number of elements in the buffer.
+%\item ${\it cnt}:\buffer_{\it Actor} \times \Msg \rightarrow \int$: denotes the multiplicity of given message in the given multiset .
+\end{itemize}
+The formal description of multiset structures and their functions are given in Section \ref{sec::abs::core-data}.
 
 
 %Mapping functions with the same semantics can be defined for $\buffer_{\it Net}$.
@@ -47,8 +55,57 @@ We define the following mappings on $\buffer_{\it Actor}$:
 
 
 \subsubsection{Semantic Rules}
-The local state of an object inform of $\langle id, V, \msgHandlr\rangle$, is defined in terms of the triple $(e,b, \sigma)$ where $e$ defines the value of the state variables of the reactor such that $V\cup\{\self\}=\domain(e)$ and $e(\self)=id$, $b$ is its internal buffer and $\sigma$ is the sequence of currently executing statements. Table~\ref{Tab::ABS-semantics} illustrates the semantic rules of ABS which are different that of in the standard semantics rules.
+The semantic rules derived from the generic template are depicted in Table~\ref{Tab::ABS-semantic} for ABS.
 
+As the buffers of objects are unbounded, the interface function $\insert$ has no limitation and its $?{\it putPolicy}$ is set to true. Messages can be selected from objects' buffers nondeterministically; so, the only condition for the $Select$ rule is containing a message. The same argument is valid for the buffer of the network.
+
+The local state of an object inform of $\langle id, V, \msgHandlr\rangle$, is defined by the triple $(e,b, \sigma)$ where $e$ defines the value of the state variables of the object, $b$ is its internal buffer and $\sigma$ is the sequence of currently executing statements. Considering the environment $e$ of an object, $V\cup\{\mathit{this}, cog\}=\domain(e)$, $e(\mathit{this})=id$, and $cog:ID\rightarrow Boolean$ is a function that shows is the corresponding cog of an object has a free executing thread.  % which are different that of in the standard semantics rules.
+Objects can send messages to themselves by using the reserved word $\it this$. ABS has three actor-level rules \textsc{Receive}, \textsc{Take}, and \textsc{Internal} for showing the behavior of the object (which are the same as the generic framework), and five rules for its statements. The rule \textsc{Send} defines the behavior for the send statement, the rule \textsc{Assign} for assignment, and the rule \textsc{Seq} for the sequential composition. In the rule \textsc{Assign}, $\eval(\expr,e)$ is the value of the expression $\expr$ with respect to the environment $e$. The two rules \textsc{Cond 1} and \textsc{Cond 2} express the behavior of the conditional statement. 
+
+ABS has two network-level rules \textsc{Receive} and \textsc{Transfer} and no rule for modifying the environment as the domain of the environment for the network is empty. The network receives the incoming messages unconditionally and delivers them nondeterministically, so $?{\it transferPolicy(e,b)}$ is set to $\true$ in the rule \textsc{Transfer}.
+
+Considering the system-level rules, the domain of environment for the system only contains ids of cogs. The boolean value which is associated with each cog id in the environment shows that the thread of that cog is assigned to an object or not.  Progress of actors happens in different cases. As shown in \textsc{ActorProgress 1}, a not busy object can start serving one of its received messages if the thread which is associated with its corresponding cog has not been assigned to another object of that cog. This rule results in assigning the thread to that object which is shown by $e[cog(x)\mapsto true]$. \textsc{ActorProgress 2} presents the continuation of executing an object which has an assigned thread from its corresponding cog. Releasing the thread by an object is shown in \textsc{ActorProgress 3} which happens upon executing the last statement of a method body of an object. \textsc{Comm 1} rule for ABS is the same as that of the template framework. Since no priority is considered for the delivery of messages in ABS, the assumption $?{\it priorityPolicy}$ is set to true in the rule \textsc{Comm 2}. There is no rule for updating the environment as only the domain of the system-level environment is not empty and it is updated by its own rules.
+
+%The value which is assigned As for any $e^\ast\in\envT$, $e^\ast\cup e=e$ and $e^\ast\setminus e=e$ when $\domain(e)=\emptyset$, the rules at the system level are simplified as illustrated in Table \ref{Tab::ClassicRules}. Since no priority is considered for the delivery of messages, the assumption $?{\it priorityPolicy}$ is set to true in the rule \textsc{Comm 2}. \fixme{Explain this more!} %As this setting has no time concept, there is no need to define the rule \textsc{EnvSync}.
+
+%-------------------------------
+\begin{table}[]
+\centering
+\caption{The semantic rules of ABS: $q\in \buffer_{\it Actor}$ and $b\in \buffer_{\it Net}$}
+\label{Tab::ABS-semantic}
+\begin{tabular}{|l|ccc|}
+\hline
+\multirow{2}{*}{\begin{sideways}Buffer\end{sideways}} 
+& \multicolumn{1}{c|} {\begin{sideways}Actor\end{sideways}}& $\inferrule*[left = (Select)]{contains(q, m)}{q\boverto{m!}\remove(q, m)}$ & $\inferrule*[left = (Put)]{q\boverto{m?}\insert(q, m)}{}$\\[1mm] \cline{2-4} 
+& \multicolumn{1}{c|} {\begin{sideways}Network\end{sideways}}& $\inferrule*[left = (Select)]{contains(b, m)}{b\boverto{m!}\remove(b, m)}$ & $\inferrule*[left = (Put)]{b\boverto{m?}\insert(b, m)}{}$\\[1mm]
+\hline
+%------------Actor
+\multirow{5}{*}{\begin{sideways}Actor\end{sideways}} & & $\inferrule*[left = ( Receive)]{q\boverto{m?}q'}{(e,q,\sigma)\aoverto{m?}(e,q',\sigma)}$ & 
+$\inferrule*[left = (Internal)]{e,\sigma\stoverto{\tau}e',\sigma'}
+{(e,q,\sigma)\aoverto{\tau}(e',q,\sigma')}$ \\[1mm]
+& \multicolumn{3}{c|}{$\inferrule*[left = (Take)]{q\boverto{m!}q'}{(e,q,\epsilon)\aoverto{m}(e,q',\msgHandlr(m.\name))}$} \\[1mm] \cline{2-4}
+%---------------Statement
+& \multirow{3}{*}{\begin{sideways}Statement\end{sideways}} &
+\multicolumn{1}{|c}{$\inferrule*[left = (Cond 1)]{\eval(\expr,e)\\e,\sigma_1\stoverto{\tau}e',\top}{e,{\it if}~ (\expr) ~\sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$} & $\inferrule*[left = (Seq)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_1;\sigma_2\stoverto{\tau}e,\sigma_2}$\\[1mm]
+& &  \multicolumn{1}{|c}{$\inferrule*[left = (Cond 2)]{\neg\eval(\expr,e)\\e,\sigma_2\stoverto{\tau}e',\top}{e,{\it if}~ (\expr)~ \sigma_1 ~{\it else}~\sigma_2 \stoverto{\tau}e',\top}$} & $\inferrule*[left = (Send)]{}{e,y!\mathfrak{m} \stoverto{(e({\it this}),\mathfrak{m},y)!} e,\top}$\\[1mm]
+& & \multicolumn{2}{|c|}{$\inferrule*[left = (Assign)]{}{e,v= \expr \stoverto{\tau} e[v\mapsto \eval(\expr,e)],\top}$} \\[1mm]
+\hline
+%-------------Network
+\begin{sideways}Network\end{sideways} & & $\inferrule*[left = (Receive)]{b\boverto{m?}b'}{(e,b)\noverto{m?}(e,b')}$   & $\inferrule*[left = (Transfer)]{b\boverto{m!}b'}{(e,b)\noverto{m!}(e,b')}$ \\[1mm] 
+\hline
+%---------------System
+\multirow{5}{*}{\begin{sideways}System\end{sideways}} 
+&  \multicolumn{3}{c|}{$\inferrule*[left = (ActorProgress 1)]{s(x)=(e',q,\epsilon) \\ (e', q, \epsilon)\aoverto{m}(e',q',\sigma)\\ e(cog(x)) = \mathit{false}}{(e,s,n)\overto{m}(e[cog(x) \mapsto \mathit{true}],s[x\mapsto(e',q',\sigma)],n)}$}\\[1mm]
+&  \multicolumn{3}{c|}{$\inferrule*[left = (ActorProgress 2)]{s(x)=(e^\ast,q,\sigma) \\ (e\cup e^\ast, q, \sigma)\aoverto{\tau}(e',q',\sigma')\\ e(cog(x)) = \mathit{true}}{(e,s,n)\overto{\tau}(e,s[x\mapsto(e'\setminus e,q',\sigma')],n)}$}\\[1mm]
+&  \multicolumn{3}{c|}{$\inferrule*[left = (ActorProgress 3)]{s(x)=(e^\ast,q,\sigma) \\ (e\cup e^\ast, q, \sigma)\aoverto{\tau}(e',q',\epsilon)\\ e(cog(x)) = \mathit{true}}{(e,s,n)\overto{\tau}(e[cog(x) \mapsto \mathit{false}],s[x\mapsto(e'\setminus e,q',\epsilon)],n)}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (comm 1)]{s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m!}(e',q',\sigma')\\ n \noverto{m?}n'}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\[1mm]
+&\multicolumn{3}{c|}{$\inferrule*[left = (comm 2)]{n\noverto{m!}n'\\m.rcv==x \\ s(x)==(e^\ast,q,\sigma)\\(e^\ast, q, \sigma)\aoverto{m?}(e',q',\sigma')}{(e,s,n)\overto{\gamma}(e,s[x\mapsto(e',q',\sigma')],n')}$}\\
+\hline
+\end{tabular}
+\end{table}
+
+
+\begin{comment}
 \begin{table}[]
 \caption{The semantic rules of ABS: $q\in \buffer_{\it Actor}$ and $b\in \buffer_{\it Net}$.}
 \label{Tab::ABS-semantic}
@@ -65,12 +122,14 @@ $\inferrule*[left = (SeqComposition)]{e,\sigma_1\stoverto{\tau}e,\top}{e,\sigma_
 \hline
 \begin{sideways}System\end{sideways} & \multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)=(e',q,\epsilon) \\ (e', q, \epsilon)\aoverto{m}(e',q',\sigma)\\ e(cog(x)) = \mathit{false}}{(e,s,n)\overto{m}(e[cog(x) \mapsto \mathit{true}],s[x\mapsto(e',q',\sigma)],n)}$} \\
 & \multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)=(e^\ast,q,\sigma) \\ (e\cup e^\ast, q, \sigma)\aoverto{\tau}(e',q',\sigma')\\ e(cog(x)) = \mathit{true}}{(e,s,n)\overto{\tau}(e,s[x\mapsto(e'\setminus e,q',\sigma')],n)}$} \\
-& \multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)=(e^\ast,q,\sigma) \\ (e\cup e^\ast, q, \sigma)\aoverto{\tau}(e',q',\epsilon)\\ e(cog(x)) = \mathit{true}}{(e,s,n)\overto{\tau}(e[cog(x) \mapsto \mathit{false}],s[x\mapsto(e'\setminus e,qش',\epsilon)],n)}$} \\
+& \multicolumn{2}{|c|}{$\inferrule*[left = (actorProgress)]{s(x)=(e^\ast,q,\sigma) \\ (e\cup e^\ast, q, \sigma)\aoverto{\tau}(e',q',\epsilon)\\ e(cog(x)) = \mathit{true}}{(e,s,n)\overto{\tau}(e[cog(x) \mapsto \mathit{false}],s[x\mapsto(e'\setminus e,q',\epsilon)],n)}$} \\
 
 \hline
 
 \end{tabular}
 \end{table}
+
+\end{comment}
 
 
 \begin{comment}
